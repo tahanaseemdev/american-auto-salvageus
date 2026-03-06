@@ -11,17 +11,19 @@ const shopLinks = [
 ];
 
 const helpLinks = [
-	{ label: 'Warranty', href: '/warranty-policy.php' },
-	{ label: 'Shipping Policy', href: '/shipping-policy.php' },
-	{ label: 'Returns & Refund', href: '/return-policy.php' },
-	{ label: 'Track My Order', href: '/track_order.php' },
-	{ label: 'Contact Us', href: '/contact.php' },
+	{ label: 'Warranty', href: '#' },
+	{ label: 'Shipping Policy', href: '#' },
+	{ label: 'Returns & Refund', href: '#' },
+	{ label: 'Track My Order', href: '#' },
+	{ label: 'Contact Us', href: '#' },
 ];
 
 const contactItems = [
-	{ icon: BiMap, text: '11011 Richmond Ave Ste 722, Houston, TX 77042', href: null },
-	{ icon: BiPhone, text: '+1-888-818-5001', href: 'tel:+1-888-818-5001' },
-	{ icon: BiEnvelope, text: 'support@allusedautoparts.world', href: 'mailto:support@allusedautoparts.world' },
+	{
+		icon: BiMap, text: '30 N Gould St Ste R Sheridan, WY 82801', href: null
+	},
+	{ icon: BiPhone, text: '+1-866-206-9163', href: '+1-866-206-9163' },
+	{ icon: BiEnvelope, text: 'info@americanautosalvageus.com', href: 'mailto:info@americanautosalvageus.com' },
 ];
 
 const socials = [
@@ -51,7 +53,7 @@ export default function Footer() {
 							Can't find your part?{' '}
 							<span className="text-amber-400">We'll source it for you.</span>
 						</p>
-						<a href="/contact.php"
+						<a href="#"
 							className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 font-black text-[11px] tracking-widest uppercase px-5 py-3 rounded-lg transition-colors flex-shrink-0">
 							Talk to a Specialist <BiRightArrowAlt size={16} />
 						</a>
@@ -66,7 +68,7 @@ export default function Footer() {
 						<div className="lg:col-span-4 flex flex-col gap-5">
 							{/* Logo wordmark */}
 							<a href="/" className="font-barlow-condensed font-black text-2xl tracking-tight text-white flex items-center gap-1 self-start">
-								ALL USED<span className="text-amber-400">&nbsp;PARTS</span>
+								American Auto<span className="text-amber-400">&nbsp;Salvageus</span>
 								<span className="w-1.5 h-1.5 rounded-full bg-amber-400 mb-0.5 ml-0.5 flex-shrink-0" />
 							</a>
 
@@ -177,13 +179,13 @@ export default function Footer() {
 				{/* ── Bottom Bar ── */}
 				<div className="border-t border-white/5">
 					<div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-neutral-600">
-						<span>© {new Date().getFullYear()} allusedautoparts.world — All rights reserved.</span>
+						<span>© {new Date().getFullYear()} American Auto Salvageus — All rights reserved.</span>
 						<div className="flex items-center gap-5">
-							<a href="/privacy-policy.php" className="hover:text-amber-400 transition-colors">Privacy Policy</a>
+							<a href="#" className="hover:text-amber-400 transition-colors">Privacy Policy</a>
 							<span className="w-px h-3 bg-neutral-800" />
-							<a href="/terms-conditions.php" className="hover:text-amber-400 transition-colors">Terms & Conditions</a>
+							<a href="#" className="hover:text-amber-400 transition-colors">Terms & Conditions</a>
 							<span className="w-px h-3 bg-neutral-800" />
-							<a href="/sitemap.php" className="hover:text-amber-400 transition-colors">Sitemap</a>
+							<a href="#" className="hover:text-amber-400 transition-colors">Sitemap</a>
 						</div>
 					</div>
 				</div>
