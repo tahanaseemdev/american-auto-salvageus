@@ -66,10 +66,10 @@ export default function Header() {
 
 				{/* Actions */}
 				<div className="hidden lg:flex items-center gap-3">
-					<a href="/login.php" className="flex items-center gap-2 text-neutral-300 hover:text-amber-400 border border-neutral-700 hover:border-amber-400/50 px-4 py-2 rounded text-xs font-bold tracking-widest uppercase transition-all">
+					<a href="/#" className="flex items-center gap-2 text-neutral-300 hover:text-amber-400 border border-neutral-700 hover:border-amber-400/50 px-4 py-2 rounded text-xs font-bold tracking-widest uppercase transition-all">
 						<BiUser size={14} /> Login
 					</a>
-					<a href="/cart.php" className="flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 px-4 py-2 rounded text-xs font-black tracking-widest uppercase transition-colors">
+					<a href="/#" className="flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 px-4 py-2 rounded text-xs font-black tracking-widest uppercase transition-colors">
 						<BiCart size={15} /> Cart
 						<span className="bg-red-600 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">3</span>
 					</a>
