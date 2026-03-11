@@ -1,27 +1,37 @@
 import { useState, useEffect } from 'react';
 import { BiPhone, BiEnvelope, BiSearch, BiCart, BiMenu, BiX, BiUser } from 'react-icons/bi';
 import { motion } from 'framer-motion';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 
 
 const NAV_LINKS = [
 	{ label: 'Home', href: '/' },
-	{ label: 'About', href: '/' },
-	{ label: 'Shop', href: '/' },
-	{ label: 'Tracking', href: '/' },
-	{ label: 'Find Mechanic', href: '/' },
-	{ label: 'Contact', href: '/' },
+	{ label: 'About', href: '/about' },
+	{ label: 'Shop', href: '/shop' },
+	{ label: 'Tracking', href: '/tracking' },
+	{ label: 'Find Mechanic', href: '/find-mechanic' },
+	{ label: 'Contact', href: '/contact' },
 ];
 
 export default function Header() {
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [scrolled, setScrolled] = useState(false);
 	const [query, setQuery] = useState('');
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		const fn = () => setScrolled(window.scrollY > 20);
 		window.addEventListener('scroll', fn);
 		return () => window.removeEventListener('scroll', fn);
 	}, []);
+
+	const handleSearch = (e) => {
+		e.preventDefault();
+		if (query.trim()) {
+			navigate(`/shop?q=${encodeURIComponent(query.trim())}`);
+			setQuery('');
+		}
+	};
 
 	return (
 		<header className="fixed top-0 left-0 right-0 z-50">
@@ -38,41 +48,47 @@ export default function Header() {
 			{/* Main Nav */}
 			<nav className={`flex items-center justify-between px-6 lg:px-8 h-[68px] transition-all duration-300 ${scrolled ? 'bg-neutral-950/95 backdrop-blur-xl border-b border-amber-500/20 shadow-[0_4px_30px_rgba(0,0,0,0.6)]' : 'bg-neutral-950/85 backdrop-blur-md border-b border-white/5'}`}>
 				{/* Logo */}
-				<a href="/" className="font-['Barlow_Condensed',sans-serif] font-black text-xl tracking-tight text-white flex items-center flex-shrink-0">
+				<Link to="/" className="font-['Barlow_Condensed',sans-serif] font-black text-xl tracking-tight text-white flex items-center flex-shrink-0">
 					American Auto<span className="text-amber-400">&nbsp;Salvageus</span>
 					<span className="w-1.5 h-1.5 rounded-full bg-amber-400 mb-0.5 ml-1 flex-shrink-0" />
-				</a>
+				</Link>
 
 				{/* Desktop links */}
 				<ul className="hidden lg:flex items-center gap-1 list-none">
 					{NAV_LINKS.map(l => (
 						<li key={l.label}>
-							<a href={l.href} className={`px-3 py-1.5 rounded text-xs font-bold tracking-widest uppercase transition-all duration-200 hover:text-amber-400 ${l.label === 'Home' ? 'text-amber-400' : 'text-neutral-300'}`}>
+							<NavLink
+								to={l.href}
+								end={l.href === '/'}
+								className={({ isActive }) =>
+									`px-3 py-1.5 rounded text-xs font-bold tracking-widest uppercase transition-all duration-200 hover:text-amber-400 ${isActive ? 'text-amber-400' : 'text-neutral-300'}`
+								}
+							>
 								{l.label}
-							</a>
+							</NavLink>
 						</li>
 					))}
 				</ul>
 
 				{/* Search */}
-				<div className="hidden lg:flex items-center bg-neutral-800 border border-neutral-700 focus-within:border-amber-400 rounded overflow-hidden flex-1 max-w-sm mx-5 transition-colors duration-200">
+				<form onSubmit={handleSearch} className="hidden lg:flex items-center bg-neutral-800 border border-neutral-700 focus-within:border-amber-400 rounded overflow-hidden flex-1 max-w-sm mx-5 transition-colors duration-200">
 					<input type="text" value={query} onChange={e => setQuery(e.target.value)}
 						placeholder="e.g. 2017 Honda Civic engine..."
 						className="bg-transparent border-none outline-none text-white text-sm placeholder-neutral-500 px-4 py-2.5 w-full" />
-					<button className="bg-amber-400 hover:bg-amber-500 text-neutral-900 px-4 py-2.5 transition-colors flex-shrink-0">
+					<button type="submit" className="bg-amber-400 hover:bg-amber-500 text-neutral-900 px-4 py-2.5 transition-colors flex-shrink-0">
 						<BiSearch size={18} />
 					</button>
-				</div>
+				</form>
 
 				{/* Actions */}
 				<div className="hidden lg:flex items-center gap-3">
-					<a href="/#" className="flex items-center gap-2 text-neutral-300 hover:text-amber-400 border border-neutral-700 hover:border-amber-400/50 px-4 py-2 rounded text-xs font-bold tracking-widest uppercase transition-all">
+					<Link to="/login" className="flex items-center gap-2 text-neutral-300 hover:text-amber-400 border border-neutral-700 hover:border-amber-400/50 px-4 py-2 rounded text-xs font-bold tracking-widest uppercase transition-all">
 						<BiUser size={14} /> Login
-					</a>
-					<a href="/#" className="flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 px-4 py-2 rounded text-xs font-black tracking-widest uppercase transition-colors">
+					</Link>
+					<Link to="/cart" className="flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 px-4 py-2 rounded text-xs font-black tracking-widest uppercase transition-colors">
 						<BiCart size={15} /> Cart
 						<span className="bg-red-600 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">3</span>
-					</a>
+					</Link>
 				</div>
 
 				{/* Hamburger */}
@@ -87,13 +103,32 @@ export default function Header() {
 				transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
 				className="lg:hidden bg-neutral-950 border-t border-white/5 overflow-hidden">
 				<div className="px-6 py-4 flex flex-col gap-1">
-					{[...NAV_LINKS, { label: 'Login', href: '/' }, { label: 'Cart (3)', href: '/' }].map(l => (
-						<a key={l.label} href={l.href} className="py-3 border-b border-neutral-800 last:border-0 text-xs font-bold tracking-widest uppercase text-neutral-300 hover:text-amber-400 transition-colors">{l.label}</a>
+					{NAV_LINKS.map(l => (
+						<NavLink
+							key={l.label}
+							to={l.href}
+							end={l.href === '/'}
+							onClick={() => setMenuOpen(false)}
+							className={({ isActive }) =>
+								`py-3 border-b border-neutral-800 last:border-0 text-xs font-bold tracking-widest uppercase transition-colors ${isActive ? 'text-amber-400' : 'text-neutral-300 hover:text-amber-400'}`
+							}
+						>
+							{l.label}
+						</NavLink>
 					))}
-					<div className="flex mt-3 bg-neutral-800 border border-neutral-700 rounded overflow-hidden">
-						<input type="text" placeholder="Search parts..." className="bg-transparent outline-none text-white text-sm placeholder-neutral-500 px-4 py-3 w-full" />
-						<button className="bg-amber-400 text-neutral-900 px-4"><BiSearch size={18} /></button>
-					</div>
+					<Link to="/login" onClick={() => setMenuOpen(false)}
+						className="py-3 border-b border-neutral-800 text-xs font-bold tracking-widest uppercase text-neutral-300 hover:text-amber-400 transition-colors">
+						Login
+					</Link>
+					<Link to="/cart" onClick={() => setMenuOpen(false)}
+						className="py-3 text-xs font-bold tracking-widest uppercase text-neutral-300 hover:text-amber-400 transition-colors">
+						Cart (3)
+					</Link>
+					<form onSubmit={handleSearch} className="flex mt-3 bg-neutral-800 border border-neutral-700 rounded overflow-hidden">
+						<input type="text" value={query} onChange={e => setQuery(e.target.value)}
+							placeholder="Search parts..." className="bg-transparent outline-none text-white text-sm placeholder-neutral-500 px-4 py-3 w-full" />
+						<button type="submit" className="bg-amber-400 text-neutral-900 px-4"><BiSearch size={18} /></button>
+					</form>
 				</div>
 			</motion.div>
 		</header>

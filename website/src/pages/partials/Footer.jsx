@@ -1,21 +1,22 @@
+import { Link } from 'react-router-dom';
 import { BiMap, BiPhone, BiEnvelope, BiRightArrowAlt } from 'react-icons/bi';
 import { FaFacebookF, FaInstagram, FaYoutube, FaXTwitter } from 'react-icons/fa6';
 
 const shopLinks = [
-	{ label: 'Engines', href: '#' },
-	{ label: 'Transmissions', href: '#' },
-	{ label: 'Alternators', href: '#' },
-	{ label: 'Headlights', href: '#' },
-	{ label: 'Axles', href: '#' },
-	{ label: 'Starters', href: '#' },
+	{ label: 'Engines', href: '/shop' },
+	{ label: 'Transmissions', href: '/shop' },
+	{ label: 'Alternators', href: '/shop' },
+	{ label: 'Headlights', href: '/shop' },
+	{ label: 'Axles', href: '/shop' },
+	{ label: 'Starters', href: '/shop' },
 ];
 
 const helpLinks = [
-	{ label: 'Warranty', href: '#' },
-	{ label: 'Shipping Policy', href: '#' },
-	{ label: 'Returns & Refund', href: '#' },
-	{ label: 'Track My Order', href: '#' },
-	{ label: 'Contact Us', href: '#' },
+	{ label: 'Warranty & Returns', href: '/returns' },
+	{ label: 'Returns & Refund', href: '/returns' },
+	{ label: 'Track My Order', href: '/tracking' },
+	{ label: 'Find a Mechanic', href: '/find-mechanic' },
+	{ label: 'Contact Us', href: '/contact' },
 ];
 
 const contactItems = [
@@ -53,10 +54,10 @@ export default function Footer() {
 							Can't find your part?{' '}
 							<span className="text-amber-400">We'll source it for you.</span>
 						</p>
-						<a href="#"
+						<Link to="/contact"
 							className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 font-black text-[11px] tracking-widest uppercase px-5 py-3 rounded-lg transition-colors flex-shrink-0">
 							Talk to a Specialist <BiRightArrowAlt size={16} />
-						</a>
+						</Link>
 					</div>
 				</div>
 
@@ -67,27 +68,16 @@ export default function Footer() {
 						{/* Brand — spans 4 cols */}
 						<div className="lg:col-span-4 flex flex-col gap-5">
 							{/* Logo wordmark */}
-							<a href="/" className="font-barlow-condensed font-black text-2xl tracking-tight text-white flex items-center gap-1 self-start">
+							<Link to="/" className="font-barlow-condensed font-black text-2xl tracking-tight text-white flex items-center gap-1 self-start">
 								American Auto<span className="text-amber-400">&nbsp;Salvageus</span>
 								<span className="w-1.5 h-1.5 rounded-full bg-amber-400 mb-0.5 ml-0.5 flex-shrink-0" />
-							</a>
+							</Link>
 
 							<p className="text-sm text-neutral-500 leading-relaxed max-w-xs">
 								Quality-tested used OEM engines, transmissions, and parts.
 								Mileage-based pricing. Nationwide shipping. America's trusted
 								source for 20 million+ auto parts.
 							</p>
-
-							{/* Trust badges */}
-							<div className="flex flex-wrap gap-2 mt-1">
-								{['OEM Tested', '90-Day Warranty', 'VIN Verified', 'SSL Secure'].map(badge => (
-									<span key={badge}
-										className="text-[10px] font-bold tracking-widest uppercase text-neutral-500 border border-neutral-800 px-2.5 py-1 rounded-md">
-										{badge}
-									</span>
-								))}
-							</div>
-
 							{/* Socials */}
 							<div className="flex gap-2 mt-1">
 								{socials.map(({ icon: Icon, href, label }) => (
@@ -108,7 +98,7 @@ export default function Footer() {
 							<ul className="space-y-2.5">
 								{shopLinks.map(({ label, href }) => (
 									<li key={label}>
-										<a href={href} className="footer-link text-sm text-neutral-500 inline-block">{label}</a>
+										<Link to={href} className="footer-link text-sm text-neutral-500 inline-block">{label}</Link>
 									</li>
 								))}
 							</ul>
@@ -123,7 +113,7 @@ export default function Footer() {
 							<ul className="space-y-2.5">
 								{helpLinks.map(({ label, href }) => (
 									<li key={label}>
-										<a href={href} className="footer-link text-sm text-neutral-500 inline-block">{label}</a>
+										<Link to={href} className="footer-link text-sm text-neutral-500 inline-block">{label}</Link>
 									</li>
 								))}
 							</ul>
@@ -181,11 +171,9 @@ export default function Footer() {
 					<div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-neutral-600">
 						<span>© {new Date().getFullYear()} American Auto Salvageus — All rights reserved.</span>
 						<div className="flex items-center gap-5">
-							<a href="#" className="hover:text-amber-400 transition-colors">Privacy Policy</a>
+							<Link to="/privacy" className="hover:text-amber-400 transition-colors">Privacy Policy</Link>
 							<span className="w-px h-3 bg-neutral-800" />
-							<a href="#" className="hover:text-amber-400 transition-colors">Terms & Conditions</a>
-							<span className="w-px h-3 bg-neutral-800" />
-							<a href="#" className="hover:text-amber-400 transition-colors">Sitemap</a>
+							<Link to="/returns" className="hover:text-amber-400 transition-colors">Returns & Refund</Link>
 						</div>
 					</div>
 				</div>
