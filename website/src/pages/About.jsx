@@ -78,12 +78,6 @@ const TEAM = [
 
 export default function About() {
   return (
-    <div>About</div>
-  );
-}
-
-function About1() {
-  return (
     <div className="font-['Barlow',sans-serif]">
 
       {/* ── Hero ── */}
@@ -308,6 +302,8 @@ function About1() {
         </div>
       </section>
 
-    </div>
-  );
+    </div>);
 }
+
+
+
