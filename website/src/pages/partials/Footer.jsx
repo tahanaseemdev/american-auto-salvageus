@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { BiMap, BiPhone, BiEnvelope, BiRightArrowAlt } from 'react-icons/bi';
 import { FaFacebookF, FaInstagram, FaYoutube, FaXTwitter } from 'react-icons/fa6';
+import logoImg from '../../assets/american autos.png';
 
 const shopLinks = [
 	{ label: 'Engines', href: '/shop' },
@@ -67,10 +68,13 @@ export default function Footer() {
 
 						{/* Brand — spans 4 cols */}
 						<div className="lg:col-span-4 flex flex-col gap-5">
-							{/* Logo wordmark */}
-							<Link to="/" className="font-barlow-condensed font-black text-2xl tracking-tight text-white flex items-center gap-1 self-start">
-								American Auto<span className="text-amber-400">&nbsp;Salvageus</span>
-								<span className="w-1.5 h-1.5 rounded-full bg-amber-400 mb-0.5 ml-0.5 flex-shrink-0" />
+							{/* Logo */}
+							<Link to="/" className="flex items-center self-start focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:ring-offset-2 focus:ring-offset-neutral-950 rounded">
+								<img
+									src={logoImg}
+									alt="American Auto Salvageus"
+									className="h-8 sm:h-9 md:h-10 w-auto max-w-[160px] sm:max-w-[200px] object-contain object-left"
+								/>
 							</Link>
 
 							<p className="text-sm text-neutral-500 leading-relaxed max-w-xs">

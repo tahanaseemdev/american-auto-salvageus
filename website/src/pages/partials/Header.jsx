@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BiPhone, BiEnvelope, BiSearch, BiCart, BiMenu, BiX, BiUser } from 'react-icons/bi';
 import { motion } from 'framer-motion';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
+import logoImg from '../../assets/american autos.png';
 
 
 const NAV_LINKS = [
@@ -48,9 +49,12 @@ export default function Header() {
 			{/* Main Nav */}
 			<nav className={`flex items-center justify-between px-6 lg:px-8 h-[68px] transition-all duration-300 ${scrolled ? 'bg-neutral-950/95 backdrop-blur-xl border-b border-amber-500/20 shadow-[0_4px_30px_rgba(0,0,0,0.6)]' : 'bg-neutral-950/85 backdrop-blur-md border-b border-white/5'}`}>
 				{/* Logo */}
-				<Link to="/" className="font-['Barlow_Condensed',sans-serif] font-black text-xl tracking-tight text-white flex items-center flex-shrink-0">
-					American Auto<span className="text-amber-400">&nbsp;Salvageus</span>
-					<span className="w-1.5 h-1.5 rounded-full bg-amber-400 mb-0.5 ml-1 flex-shrink-0" />
+				<Link to="/" className="flex items-center flex-shrink-0 h-9 sm:h-10 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:ring-offset-2 focus:ring-offset-neutral-950 rounded">
+					<img
+						src={logoImg}
+						alt="American Auto Salvageus"
+						className="h-full w-auto max-w-[140px] sm:max-w-[160px] lg:max-w-[200px] object-contain object-left"
+					/>
 				</Link>
 
 				{/* Desktop links */}
