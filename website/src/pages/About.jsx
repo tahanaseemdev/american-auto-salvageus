@@ -4,6 +4,7 @@ import { BiCheckCircle, BiTrophy, BiGroup, BiStar, BiTime, BiMap } from 'react-i
 import { IoShieldCheckmark } from "react-icons/io5";
 import { FaTruck, FaRecycle, FaHandshake, FaWrench } from 'react-icons/fa';
 import { HiSparkles } from 'react-icons/hi';
+import aboutImage from '../assets/tim-mossholder-VurHDpO4VYI-unsplash.jpg';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -132,8 +133,8 @@ export default function About() {
           {/* Image side */}
           <Reveal variants={scaleIn}>
             <div className="relative">
-              <div className="rounded-2xl overflow-hidden  bg-neutral-200 flex items-center justify-center">
-                <img src="https://plus.unsplash.com/premium_photo-1678318784591-cb64d92e14cb?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="" />
+              <div className="rounded-2xl overflow-hidden bg-neutral-200 flex items-center justify-center">
+                <img src={aboutImage} alt="Classic car engine — American Auto Salvageus expertise" className="w-full h-full object-cover" />
               </div>
               {/* Corner tag */}
               <div className="absolute -bottom-4 -right-4 bg-amber-400 rounded-xl p-4 text-center shadow-xl">
