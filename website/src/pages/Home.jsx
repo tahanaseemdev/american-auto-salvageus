@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { BiSearch, BiCart, BiCheckCircle, BiRightArrowAlt, BiUser, BiPhone, BiMenu, BiX, BiEnvelope, BiAward } from 'react-icons/bi';
 import { FaClipboardCheck, FaTruck } from 'react-icons/fa';
 import { BsFillLightningChargeFill } from 'react-icons/bs';
@@ -7,6 +8,7 @@ import { IoShieldCheckmark } from 'react-icons/io5';
 import { BiCreditCard } from 'react-icons/bi';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay } from 'swiper/modules';
+import api from '../utils/api';
 import 'swiper/css';
 /* ─── Animation Variants ─── */
 const fadeUp = {
@@ -28,16 +30,17 @@ const scaleIn = {
 	hidden: { opacity: 0, scale: 0.95 },
 	visible: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
 };
+const MotionDiv = motion.div;
 
 /* ─── Scroll Reveal Wrapper ─── */
 function Reveal({ children, className = '', delay = 0, variants = fadeUp }) {
 	const ref = useRef(null);
 	const inView = useInView(ref, { once: true, margin: '-60px' });
 	return (
-		<motion.div ref={ref} className={className} initial="hidden"
+		<MotionDiv ref={ref} className={className} initial="hidden"
 			animate={inView ? 'visible' : 'hidden'} custom={delay} variants={variants}>
 			{children}
-		</motion.div>
+		</MotionDiv>
 	);
 }
 
@@ -129,7 +132,7 @@ function Hero() {
 					{[...Array(2)].map((_, gi) =>
 						TICKER_ITEMS.map(item => (
 							<span key={`${gi}-${item}`} className="inline-flex items-center gap-5 px-8 font-['Barlow_Condensed',sans-serif] font-bold text-[13px] tracking-[0.14em] uppercase text-neutral-900">
-								{item} <span className="w-1 h-1 rounded-full bg-neutral-900/30 flex-shrink-0" />
+								{item} <span className="w-1 h-1 rounded-full bg-neutral-900/30 shrink-0" />
 							</span>
 						))
 					)}
@@ -224,6 +227,115 @@ function Hero() {
 	HOME PAGE
 ════════════════════════════════ */
 export default function Home() {
+	const navigate = useNavigate();
+	const [featuredProducts, setFeaturedProducts] = useState([]);
+	const [featuredCategories, setFeaturedCategories] = useState([]);
+	const [filterOptions, setFilterOptions] = useState({ parts: [], makes: [], models: [], years: [], trims: [] });
+	const [filters, setFilters] = useState({ part: '', make: '', model: '', year: '', trim: '' });
+
+	useEffect(() => {
+		let cancelled = false;
+
+		async function loadFeatured() {
+			try {
+				const [productsRes, categoriesRes] = await Promise.all([
+					api.get('/products?featured=true&limit=8'),
+					api.get('/categories?featured=true'),
+				]);
+
+				if (cancelled) return;
+				setFeaturedProducts(productsRes?.data?.data?.products || []);
+				setFeaturedCategories(categoriesRes?.data?.data || []);
+			} catch {
+				if (!cancelled) {
+					setFeaturedProducts([]);
+					setFeaturedCategories([]);
+				}
+			}
+		}
+
+		loadFeatured();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	useEffect(() => {
+		let cancelled = false;
+
+		async function loadFilterOptions() {
+			try {
+				const [partsRes, makesRes, modelsRes, yearsRes, trimsRes] = await Promise.all([
+					api.get('/categories'),
+					api.get('/categories/sub/list'),
+					api.get('/catalog/models'),
+					api.get('/catalog/years'),
+					api.get('/catalog/trims'),
+				]);
+
+				if (cancelled) return;
+				setFilterOptions({
+					parts: partsRes?.data?.data || [],
+					makes: makesRes?.data?.data || [],
+					models: modelsRes?.data?.data || [],
+					years: yearsRes?.data?.data || [],
+					trims: trimsRes?.data?.data || [],
+				});
+			} catch {
+				if (!cancelled) {
+					setFilterOptions({ parts: [], makes: [], models: [], years: [], trims: [] });
+				}
+			}
+		}
+
+		loadFilterOptions();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	const onFilterChange = (name, value) => {
+		setFilters((prev) => {
+			const next = { ...prev, [name]: value };
+			if (name === 'part') next.make = '';
+			return next;
+		});
+	};
+
+	const handleFilterSearch = () => {
+		const params = new URLSearchParams();
+		if (filters.part) params.set('part', filters.part);
+		if (filters.make) params.set('make', filters.make);
+		if (filters.model) params.set('model', filters.model);
+		if (filters.year) params.set('year', filters.year);
+		if (filters.trim) params.set('trim', filters.trim);
+
+		const query = params.toString();
+		navigate(query ? `/shop?${query}` : '/shop');
+	};
+
+	const makeOptions = filters.part
+		? filterOptions.makes.filter((item) => item.category?._id === filters.part || item.category === filters.part)
+		: filterOptions.makes;
+
+	const displayedPopularParts = featuredProducts.length
+		? featuredProducts.map((part) => ({
+			id: part._id,
+			title: part.name,
+			price: `$${Number(part.price || 0).toFixed(2)}`,
+			img: part.image || 'https://allusedautoparts.world/aaps-img/transmission.jpg',
+			tag: part.category?.title || 'Featured',
+		}))
+		: popularParts;
+
+	const displayedPartsGrid = featuredCategories.length
+		? featuredCategories.map((category) => ({
+			title: category.title,
+			img: category.image || 'https://allusedautoparts.world/aaps-img/alternator.jpg',
+			href: `/shop/category/${category._id}`,
+		}))
+		: partsGrid;
+
 	return (
 		<div className="font-['Barlow',sans-serif]">
 			<Hero />
@@ -238,15 +350,53 @@ export default function Home() {
 									Search by Part → Make → Model → Year → Trim
 								</p>
 								<div className="grid grid-cols-2 lg:grid-cols-6 gap-3 items-end">
-									{SEARCH_FIELDS.map(field => (
-										<div key={field} className="flex flex-col gap-1">
-											<label className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">{field}</label>
-											<select className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer">
-												<option>Select…</option>
-											</select>
-										</div>
-									))}
+									<div className="flex flex-col gap-1">
+										<label className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">{SEARCH_FIELDS[0]}</label>
+										<select value={filters.part} onChange={(event) => onFilterChange('part', event.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer">
+											<option value="">Select...</option>
+											{filterOptions.parts.map((item) => (
+												<option key={item._id} value={item._id}>{item.title}</option>
+											))}
+										</select>
+									</div>
+									<div className="flex flex-col gap-1">
+										<label className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">{SEARCH_FIELDS[1]}</label>
+										<select value={filters.make} onChange={(event) => onFilterChange('make', event.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer">
+											<option value="">Select...</option>
+											{makeOptions.map((item) => (
+												<option key={item._id} value={item._id}>{item.name}</option>
+											))}
+										</select>
+									</div>
+									<div className="flex flex-col gap-1">
+										<label className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">{SEARCH_FIELDS[2]}</label>
+										<select value={filters.model} onChange={(event) => onFilterChange('model', event.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer">
+											<option value="">Select...</option>
+											{filterOptions.models.map((item) => (
+												<option key={item._id} value={item.title}>{item.title}</option>
+											))}
+										</select>
+									</div>
+									<div className="flex flex-col gap-1">
+										<label className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">{SEARCH_FIELDS[3]}</label>
+										<select value={filters.year} onChange={(event) => onFilterChange('year', event.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer">
+											<option value="">Select...</option>
+											{filterOptions.years.map((item) => (
+												<option key={item._id} value={item.title}>{item.title}</option>
+											))}
+										</select>
+									</div>
+									<div className="flex flex-col gap-1">
+										<label className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">{SEARCH_FIELDS[4]}</label>
+										<select value={filters.trim} onChange={(event) => onFilterChange('trim', event.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer">
+											<option value="">Select...</option>
+											{filterOptions.trims.map((item) => (
+												<option key={item._id} value={item.title}>{item.title}</option>
+											))}
+										</select>
+									</div>
 									<motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.96 }}
+										onClick={handleFilterSearch}
 										className="col-span-2 lg:col-span-1 bg-amber-400 hover:bg-amber-500 text-neutral-900 font-black text-[13px] tracking-widest uppercase py-2.5 px-4 rounded-lg flex justify-center items-center gap-2 transition-colors h-[42px]">
 										<BiSearch size={18} /> Search
 									</motion.button>
@@ -270,17 +420,20 @@ export default function Home() {
 					<div className="max-w-6xl mx-auto px-4 sm:px-6">
 						<motion.div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-neutral-100"
 							initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} variants={stagger}>
-							{benefits.map(({ icon: Icon, title, sub }) => (
-								<motion.div key={title} variants={staggerItem} className="flex items-center gap-4 px-6 py-5">
-									<div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-										<Icon className="text-amber-500" size={20} />
-									</div>
-									<div>
-										<div className="font-bold text-neutral-900 text-sm">{title}</div>
-										<div className="text-xs text-neutral-400 font-medium">{sub}</div>
-									</div>
-								</motion.div>
-							))}
+							{benefits.map(({ icon: Icon, title, sub }) => {
+								const BenefitIcon = Icon;
+								return (
+									<motion.div key={title} variants={staggerItem} className="flex items-center gap-4 px-6 py-5">
+										<div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+											<BenefitIcon className="text-amber-500" size={20} />
+										</div>
+										<div>
+											<div className="font-bold text-neutral-900 text-sm">{title}</div>
+											<div className="text-xs text-neutral-400 font-medium">{sub}</div>
+										</div>
+									</motion.div>
+								);
+							})}
 						</motion.div>
 					</div>
 				</section>
@@ -299,7 +452,7 @@ export default function Home() {
 								<motion.img src={promo.img} alt={promo.title}
 									className="absolute inset-0 w-full h-full object-cover"
 									whileHover={{ scale: 1.06 }} transition={{ duration: 0.5 }} />
-								<div className="absolute inset-0 bg-gradient-to-r from-neutral-950/90 via-neutral-950/50 to-transparent" />
+								<div className="absolute inset-0 bg-linear-to-r from-neutral-950/90 via-neutral-950/50 to-transparent" />
 								<div className="relative z-10 p-7 h-full flex flex-col justify-end">
 									<p className="text-amber-400 text-[10px] font-bold tracking-[0.18em] uppercase mb-1">{promo.eyebrow}</p>
 									<h3 className="font-['Barlow_Condensed',sans-serif] font-black text-2xl uppercase text-white leading-tight mb-3">{promo.title}</h3>
@@ -323,19 +476,19 @@ export default function Home() {
 						</div>
 						<motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
 							initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} variants={stagger}>
-							{popularParts.map(part => (
+							{displayedPopularParts.map(part => (
 								<motion.div key={part.id} variants={staggerItem}
 									className="bg-white rounded-2xl overflow-hidden border border-neutral-200 flex flex-col group cursor-pointer"
 									whileHover={{ y: -5, boxShadow: '0 20px 48px -8px rgba(0,0,0,0.15)' }} transition={{ duration: 0.22 }}>
-									<div className="aspect-[4/3] bg-neutral-50 flex items-center justify-center p-5 border-b border-neutral-100 overflow-hidden">
+									<div className="aspect-4/3 bg-neutral-50 flex items-center justify-center p-5 border-b border-neutral-100 overflow-hidden">
 										<motion.img src={part.img} alt={part.title} className="max-h-full object-contain"
 											whileHover={{ scale: 1.08 }} transition={{ duration: 0.3 }} />
 									</div>
-									<div className="p-5 flex flex-col flex-grow">
+									<div className="p-5 flex flex-col grow">
 										<span className="inline-block mb-2 text-[10px] font-bold tracking-widest uppercase text-amber-500 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded self-start">
 											{part.tag} · Mileage Tiers
 										</span>
-										<h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-4 flex-grow">{part.title}</h3>
+										<h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-4 grow">{part.title}</h3>
 										<div className="flex items-center justify-between mt-auto">
 											<span className="font-['Barlow_Condensed',sans-serif] font-black text-2xl text-neutral-900">{part.price}</span>
 											<motion.button
@@ -356,7 +509,7 @@ export default function Home() {
 				<section className="relative py-20 bg-neutral-950 overflow-hidden">
 					<div className="absolute inset-0 opacity-10"
 						style={{ backgroundImage: "url('https://images.unsplash.com/photo-1511919884226-fd3cad34687c?q=80&w=2000&auto=format&fit=crop')", backgroundSize: 'cover', backgroundPosition: 'center' }} />
-					<div className="absolute inset-0 bg-gradient-to-br from-neutral-950/95 via-neutral-950/80 to-neutral-950/95" />
+					<div className="absolute inset-0 bg-linear-to-br from-neutral-950/95 via-neutral-950/80 to-neutral-950/95" />
 					<div className="absolute top-0 right-0 w-96 h-96 rounded-full pointer-events-none"
 						style={{ background: 'radial-gradient(circle,rgba(245,158,11,0.12) 0%,transparent 70%)' }} />
 
@@ -372,14 +525,17 @@ export default function Home() {
 								</p>
 								<motion.ul className="space-y-4 mb-10"
 									initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
-									{[[IoShieldCheckmark, '90-day warranty on eligible parts'], [IoShieldCheckmark, 'VIN-match fitment checks before ship'], [FaClipboardCheck, 'Mileage tiers for clear, honest pricing']].map(([Icon, text], i) => (
-										<motion.li key={i} variants={staggerItem} className="flex items-center gap-3 text-neutral-300 text-sm font-medium">
-											<div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center flex-shrink-0">
-												<Icon className="text-amber-400" size={16} />
-											</div>
-											{text}
-										</motion.li>
-									))}
+									{[[IoShieldCheckmark, '90-day warranty on eligible parts'], [IoShieldCheckmark, 'VIN-match fitment checks before ship'], [FaClipboardCheck, 'Mileage tiers for clear, honest pricing']].map(([Icon, text], i) => {
+										const FeatureIcon = Icon;
+										return (
+											<motion.li key={i} variants={staggerItem} className="flex items-center gap-3 text-neutral-300 text-sm font-medium">
+												<div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/20 flex items-center justify-center shrink-0">
+													<FeatureIcon className="text-amber-400" size={16} />
+												</div>
+												{text}
+											</motion.li>
+										);
+									})}
 								</motion.ul>
 								<motion.div className="grid grid-cols-4 gap-3"
 									initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
@@ -421,7 +577,7 @@ export default function Home() {
 							{[...Array(2)].map((_, gi) =>
 								brands.map(brand => (
 									<motion.div key={`${gi}-${brand.name}`}
-										className="inline-flex items-center gap-3 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 mx-2 cursor-pointer flex-shrink-0"
+										className="inline-flex items-center gap-3 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 mx-2 cursor-pointer shrink-0"
 										whileHover={{ scale: 1.05, borderColor: '#FCD34D', backgroundColor: '#FFFBEB' }}>
 										<div className="w-14 h-8 flex items-center justify-center">
 											<img src={brand.img} alt={brand.name} className="max-w-full max-h-full object-contain mix-blend-multiply" />
@@ -439,7 +595,7 @@ export default function Home() {
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
 						<Reveal className="relative order-2 lg:order-1">
 							<img src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=1600&auto=format&fit=crop"
-								alt="Guides" className="rounded-2xl shadow-xl w-full object-cover aspect-[4/3]" />
+								alt="Guides" className="rounded-2xl shadow-xl w-full object-cover aspect-4/3" />
 							<div className="absolute -bottom-4 -right-4 bg-amber-400 text-neutral-900 font-['Barlow_Condensed',sans-serif] font-black text-sm tracking-widest uppercase px-5 py-3 rounded-xl shadow-lg">
 								Mechanic-Approved
 							</div>
@@ -452,7 +608,7 @@ export default function Home() {
 								initial="hidden" whileInView="visible" viewport={{ once: true }} variants={stagger}>
 								{['How to decode your VIN to match the right engine', 'Transmission compatibility: swap tips by generation', 'Shipping and core return policy explained'].map(item => (
 									<motion.li key={item} variants={staggerItem} className="flex items-start gap-3 text-neutral-700 text-sm font-medium">
-										<BiCheckCircle className="text-amber-400 flex-shrink-0 mt-0.5" size={20} /> {item}
+										<BiCheckCircle className="text-amber-400 shrink-0 mt-0.5" size={20} /> {item}
 									</motion.li>
 								))}
 							</motion.ul>
@@ -478,7 +634,7 @@ export default function Home() {
 						</div>
 						<motion.div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3"
 							initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} variants={stagger}>
-							{partsGrid.map((cat, idx) => (
+							{displayedPartsGrid.map((cat, idx) => (
 								<motion.div key={idx} variants={staggerItem}
 									className="bg-white border border-neutral-200 rounded-xl overflow-hidden text-center group cursor-pointer"
 									whileHover={{ y: -4, boxShadow: '0 12px 32px -6px rgba(0,0,0,0.12)' }}>
@@ -486,9 +642,9 @@ export default function Home() {
 										<motion.img src={cat.img} alt={cat.title} className="max-h-full object-contain"
 											whileHover={{ scale: 1.12 }} transition={{ duration: 0.3 }} />
 									</div>
-									<div className="py-3 px-2 font-bold text-neutral-700 text-xs tracking-wide truncate group-hover:text-amber-500 transition-colors">
+									<a href={cat.href || '#'} className="block py-3 px-2 font-bold text-neutral-700 text-xs tracking-wide truncate group-hover:text-amber-500 transition-colors">
 										{cat.title}
-									</div>
+									</a>
 								</motion.div>
 							))}
 						</motion.div>
@@ -522,9 +678,9 @@ export default function Home() {
 													</svg>
 												))}
 											</div>
-											<p className="text-neutral-700 text-sm leading-relaxed flex-grow mb-5">"{t.quote}"</p>
+											<p className="text-neutral-700 text-sm leading-relaxed grow mb-5">"{t.quote}"</p>
 											<div className="flex items-center gap-3 pt-4 border-t border-neutral-200">
-												<div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center font-['Barlow_Condensed',sans-serif] font-black text-amber-600 text-sm flex-shrink-0">{t.author[0]}</div>
+												<div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center font-['Barlow_Condensed',sans-serif] font-black text-amber-600 text-sm shrink-0">{t.author[0]}</div>
 												<div>
 													<div className="font-bold text-xs text-neutral-900">{t.author}</div>
 													<div className="text-[11px] text-neutral-400">{t.detail}</div>

@@ -1,9 +1,11 @@
-import { useState, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { BiSearch, BiFilter, BiCart, BiChevronDown, BiStar, BiX } from 'react-icons/bi';
-import { IoShieldCheckmark } from "react-icons/io5";
-import { FaSlidersH } from 'react-icons/fa';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { BiCart, BiChevronRight } from 'react-icons/bi';
+import { IoShieldCheckmark, IoGridOutline } from "react-icons/io5";
 import { HiSparkles } from 'react-icons/hi';
+import api from '../utils/api';
+import { useCart } from '../context/CartContext';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 28 },
@@ -18,200 +20,411 @@ const staggerItem = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
 };
 
+const MotionDiv = motion.div;
+const MotionButton = motion.button;
+
 function Reveal({ children, className = '', delay = 0, variants = fadeUp }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
   return (
-    <motion.div ref={ref} variants={variants} initial="hidden"
+    <MotionDiv ref={ref} variants={variants} initial="hidden"
       animate={inView ? 'visible' : 'hidden'} transition={{ delay }} className={className}>
       {children}
-    </motion.div>
+    </MotionDiv>
   );
 }
 
-const PRODUCTS = [
-  { id: 1, name: 'Complete Engine Assembly — 2.4L Inline-4', category: 'Engines', price: 1249, originalPrice: 1899, },
-  { id: 2, name: 'Transmission — 6-Speed Automatic', category: 'Transmissions', price: 879, originalPrice: 1400, },
-  { id: 3, name: 'Front Door Assembly — Driver Side', category: 'Body Parts', price: 175, originalPrice: 290, },
-  { id: 4, name: 'Alternator — 130 Amp', category: 'Electrical', price: 95, originalPrice: 175, },
-  { id: 5, name: 'Radiator — 2-Row Heavy Duty', category: 'Cooling', price: 120, originalPrice: 220, },
-  { id: 6, name: 'Rear Axle Assembly — Complete', category: 'Drivetrain', price: 450, originalPrice: 780, },
-  { id: 7, name: 'Hood — Factory Finish', category: 'Body Parts', price: 210, originalPrice: 360, },
-  { id: 8, name: 'Starter Motor — V6 3.5L', category: 'Electrical', price: 75, originalPrice: 140, },
-  { id: 9, name: 'Complete Strut Assembly — Front Pair', category: 'Suspension', price: 280, originalPrice: 480, },
-  { id: 10, name: 'Fuel Tank — Steel 16-Gallon', category: 'Fuel System', price: 145, originalPrice: 250, },
-  { id: 11, name: 'Power Steering Pump', category: 'Steering', price: 85, originalPrice: 160, },
-  { id: 12, name: 'Catalytic Converter — CARB Compliant', category: 'Exhaust', price: 320, originalPrice: 560, },
-];
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?q=80&w=1200&auto=format&fit=crop';
 
-const CATEGORIES = ['All', 'Engines', 'Transmissions', 'Body Parts', 'Electrical', 'Suspension', 'Cooling', 'Drivetrain', 'Exhaust', 'Fuel System', 'Steering'];
-const SORT_OPTIONS = ['Featured', 'Price: Low to High', 'Price: High to Low', 'Top Rated', 'Newest'];
+function Hero({ title, subtitle }) {
+  return (
+    <section className="bg-neutral-950 pt-[68px] md:pt-[104px] pb-10 relative overflow-hidden">
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(245,158,11,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(245,158,11,0.04) 1px, transparent 1px)',
+          backgroundSize: '52px 52px'
+        }}
+      />
+      <div
+        className="absolute top-0 right-0 w-[500px] h-[300px] pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.10) 0%, transparent 65%)' }}
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 relative">
+        <Reveal>
+          <span className="font-['Barlow_Condensed',sans-serif] font-bold text-xs tracking-[0.18em] uppercase text-amber-400 flex items-center gap-2 mb-3">
+            <HiSparkles /> Our Catalog
+          </span>
+          <h1 className="font-['Barlow_Condensed',sans-serif] font-black text-5xl md:text-6xl uppercase leading-none text-white mb-3">
+            {title}
+          </h1>
+          <p className="text-neutral-400 max-w-2xl">{subtitle}</p>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
 
+function Breadcrumbs({ category, subCategory }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-[11px] font-black tracking-widest uppercase text-neutral-400">
+      <Link to="/shop" className="hover:text-amber-500 transition-colors">Shop</Link>
+      {category && (
+        <>
+          <BiChevronRight className="text-neutral-300" />
+          <Link
+            to={`/shop/category/${category._id}`}
+            className={`transition-colors ${subCategory ? 'hover:text-amber-500' : 'text-neutral-700'}`}
+          >
+            {category.title}
+          </Link>
+        </>
+      )}
+      {subCategory && (
+        <>
+          <BiChevronRight className="text-neutral-300" />
+          <span className="text-neutral-700">{subCategory.name}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ProductGrid({ products, addedIds, onAdd }) {
+  if (!products.length) {
+    return (
+      <div className="text-center py-16 text-neutral-400 border border-dashed border-neutral-300 rounded-2xl bg-white/70">
+        <IoGridOutline size={40} className="mx-auto mb-3 opacity-40" />
+        <p className="font-semibold">No products found.</p>
+      </div>
+    );
+  }
+
+  return (
+    <MotionDiv
+      variants={stagger}
+      initial="hidden"
+      animate="visible"
+      className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
+    >
+      {products.map((product) => (
+        <MotionDiv
+          key={product._id}
+          variants={staggerItem}
+          whileHover={{ y: -5, boxShadow: '0 20px 48px -8px rgba(0,0,0,0.15)' }}
+          className="bg-white rounded-2xl overflow-hidden border border-neutral-200 flex flex-col"
+        >
+          <div className="aspect-4/3 bg-neutral-100 border-b border-neutral-100 relative overflow-hidden">
+            {product.image ? (
+              <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center text-neutral-300">
+                  <div className="w-16 h-16 rounded-xl bg-neutral-200 mx-auto mb-2 flex items-center justify-center">
+                    <IoShieldCheckmark size={28} className="text-neutral-400" />
+                  </div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Quality Tested</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 flex flex-col flex-1">
+            <h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-2 flex-1">{product.name}</h3>
+
+            <div className="flex items-end justify-between mt-auto pt-3 border-t border-neutral-100">
+              <span className="font-['Barlow_Condensed',sans-serif] font-black text-2xl text-neutral-900">
+                ${Number(product.price || 0).toLocaleString()}
+              </span>
+              <MotionButton
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onAdd(product)}
+                className={`flex items-center gap-1.5 text-[11px] font-black tracking-widest uppercase px-4 py-2 rounded-lg transition-all ${addedIds.includes(product._id)
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white'
+                  }`}
+              >
+                <BiCart size={14} />
+                {addedIds.includes(product._id) ? 'Added!' : 'Add'}
+              </MotionButton>
+            </div>
+          </div>
+        </MotionDiv>
+      ))}
+    </MotionDiv>
+  );
+}
 
 export default function Shop() {
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedCondition, setSelectedCondition] = useState('Any Condition');
-  const [maxPrice, setMaxPrice] = useState(2000);
-  const [sortBy, setSortBy] = useState('Featured');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { categoryId, subCategoryId } = useParams();
+  const [searchParams] = useSearchParams();
+  const searchQuery = (searchParams.get('q') || '').trim();
+  const partFilter = (searchParams.get('part') || '').trim();
+  const makeFilter = (searchParams.get('make') || '').trim();
+  const modelFilter = (searchParams.get('model') || '').trim();
+  const yearFilter = (searchParams.get('year') || '').trim();
+  const trimFilter = (searchParams.get('trim') || '').trim();
+  const { addItem } = useCart();
+
+  const [categories, setCategories] = useState([]);
+  const [categoryDetail, setCategoryDetail] = useState(null);
+  const [subCategoryProducts, setSubCategoryProducts] = useState([]);
+  const [searchProducts, setSearchProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [addedIds, setAddedIds] = useState([]);
 
-  const filtered = PRODUCTS.filter(p => {
-    const matchCat = selectedCategory === 'All' || p.category === selectedCategory;
-    const matchCond = selectedCondition === 'Any Condition' || p.condition === selectedCondition;
-    const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase());
-    const matchPrice = p.price <= maxPrice;
-    return matchCat && matchCond && matchSearch && matchPrice;
-  }).sort((a, b) => {
-    if (sortBy === 'Price: Low to High') return a.price - b.price;
-    if (sortBy === 'Price: High to Low') return b.price - a.price;
-    if (sortBy === 'Top Rated') return b.rating - a.rating;
-    return 0;
-  });
+  const hasStructuredFilters = Boolean(partFilter || makeFilter || modelFilter || yearFilter || trimFilter);
 
-  const handleAdd = (id) => {
-    setAddedIds(prev => [...prev, id]);
-    setTimeout(() => setAddedIds(prev => prev.filter(x => x !== id)), 1500);
+  const category = categoryDetail?.category || null;
+  const subCategories = categoryDetail?.subCategories || [];
+  const categoryProducts = categoryDetail?.products || [];
+  const activeSubCategory = subCategories.find((item) => item._id === subCategoryId) || null;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError('');
+
+      try {
+        if (searchQuery) {
+          const { data } = await api.get(`/products?q=${encodeURIComponent(searchQuery)}&limit=100`);
+          if (!cancelled) {
+            setSearchProducts(data?.data?.products || []);
+            setCategories([]);
+            setCategoryDetail(null);
+            setSubCategoryProducts([]);
+          }
+          return;
+        }
+
+        if (hasStructuredFilters) {
+          const params = new URLSearchParams();
+          params.set('limit', '100');
+          if (partFilter) params.set('category', partFilter);
+          if (makeFilter) params.set('subCategory', makeFilter);
+          if (modelFilter) params.set('model', modelFilter);
+          if (yearFilter) params.set('year', yearFilter);
+          if (trimFilter) params.set('trim', trimFilter);
+
+          const { data } = await api.get(`/products?${params.toString()}`);
+          if (!cancelled) {
+            setSearchProducts(data?.data?.products || []);
+            setCategories([]);
+            setCategoryDetail(null);
+            setSubCategoryProducts([]);
+          }
+          return;
+        }
+
+        if (!categoryId) {
+          const { data } = await api.get('/categories');
+          if (!cancelled) {
+            setCategories(Array.isArray(data.data) ? data.data : []);
+            setCategoryDetail(null);
+            setSubCategoryProducts([]);
+            setSearchProducts([]);
+          }
+          return;
+        }
+
+        const detailRequest = api.get(`/categories/${categoryId}`);
+        const subProductsRequest = subCategoryId
+          ? api.get(`/products?subCategory=${subCategoryId}&limit=100`)
+          : Promise.resolve(null);
+
+        const [detailRes, subProductsRes] = await Promise.all([detailRequest, subProductsRequest]);
+        if (cancelled) return;
+
+        setCategoryDetail(detailRes.data?.data || null);
+        setSubCategoryProducts(subProductsRes?.data?.data?.products || []);
+        setSearchProducts([]);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err?.response?.data?.message || 'Unable to load catalog data right now.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    categoryId,
+    subCategoryId,
+    searchQuery,
+    hasStructuredFilters,
+    partFilter,
+    makeFilter,
+    modelFilter,
+    yearFilter,
+    trimFilter,
+  ]);
+
+  const heroContent = useMemo(() => {
+    if (!categoryId) {
+      if (searchQuery) {
+        return {
+          title: <>Search <span className="text-amber-400">Results</span></>,
+          subtitle: `Showing parts matching "${searchQuery}".`
+        };
+      }
+      if (hasStructuredFilters) {
+        return {
+          title: <>Filtered <span className="text-amber-400">Results</span></>,
+          subtitle: 'Showing products matching your selected Part, Make, Model, Year, and Trim filters.'
+        };
+      }
+      return {
+        title: <>Shop <span className="text-amber-400">Categories</span></>,
+        subtitle: 'Pick a category to browse available sub-categories and inventory curated for your vehicle needs.'
+      };
+    }
+
+    if (subCategoryId && activeSubCategory) {
+      return {
+        title: <><span className="text-amber-400">{activeSubCategory.name}</span> Parts</>,
+        subtitle: `Browse inventory listed under ${activeSubCategory.name}.`
+      };
+    }
+
+    return {
+      title: <>{category?.title || 'Category'} <span className="text-amber-400">Parts</span></>,
+      subtitle: 'Choose a sub-category or browse all products available in this category.'
+    };
+  }, [categoryId, subCategoryId, activeSubCategory, category, searchQuery, hasStructuredFilters]);
+
+  const handleAdd = async (product) => {
+    await addItem(product, 1);
+    setAddedIds((prev) => [...prev, product._id]);
+    window.setTimeout(() => {
+      setAddedIds((prev) => prev.filter((id) => id !== product._id));
+    }, 1200);
   };
-
-  const Sidebar = () => (
-    <aside className="w-full space-y-6">
-      {/* Category */}
-      <div>
-        <h3 className="font-['Barlow_Condensed',sans-serif] font-black text-xs tracking-[0.14em] uppercase text-neutral-900 mb-3 flex items-center gap-2">
-          <span className="w-4 h-0.5 bg-amber-400 inline-block" /> Category
-        </h3>
-        <div className="space-y-1">
-          {CATEGORIES.map(cat => (
-            <button key={cat} onClick={() => setSelectedCategory(cat)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all ${selectedCategory === cat ? 'bg-amber-400 text-neutral-900 font-bold' : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'}`}>
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Reset */}
-      <button onClick={() => { setSelectedCategory('All'); setSelectedCondition('Any Condition'); setMaxPrice(2000); setSearch(''); }}
-        className="w-full border border-neutral-300 hover:border-amber-400 text-neutral-500 hover:text-amber-500 text-xs font-bold tracking-widest uppercase py-2.5 rounded-lg transition-all">
-        Reset Filters
-      </button>
-    </aside>
-  );
 
   return (
     <div className="font-['Barlow',sans-serif]">
+      <Hero title={heroContent.title} subtitle={heroContent.subtitle} />
 
-      {/* ── Hero Banner ── */}
-      <section className="bg-neutral-950 pt-[68px] md:pt-[104px] pb-10 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none"
-          style={{ backgroundImage: 'linear-gradient(rgba(245,158,11,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(245,158,11,0.04) 1px, transparent 1px)', backgroundSize: '52px 52px' }} />
-        <div className="absolute top-0 right-0 w-[500px] h-[300px] pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.10) 0%, transparent 65%)' }} />
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 relative">
-          <Reveal>
-            <span className="font-['Barlow_Condensed',sans-serif] font-bold text-xs tracking-[0.18em] uppercase text-amber-400 flex items-center gap-2 mb-3">
-              <HiSparkles /> Our Catalog
-            </span>
-            <h1 className="font-['Barlow_Condensed',sans-serif] font-black text-5xl md:text-6xl uppercase leading-none text-white mb-3">
-              Shop <span className="text-amber-400">All Parts</span>
-            </h1>
-            <p className="text-neutral-400 max-w-xl">
-              Over 500,000 quality-tested used parts — all grades, all makes, all models.
-            </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ── Filters Bar + Grid ── */}
       <section className="bg-neutral-50 py-10 min-h-screen">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-7">
+          <Reveal>
+            <Breadcrumbs category={category} subCategory={activeSubCategory} />
+          </Reveal>
 
-          <div className="flex gap-8">
-            {/* Sidebar — desktop */}
-            <div className="hidden lg:block w-56 flex-shrink-0">
-              <Sidebar />
+          {loading ? (
+            <div className="bg-white border border-neutral-200 rounded-2xl p-10 text-center text-neutral-400">
+              Loading catalog...
             </div>
-
-            {/* Mobile sidebar drawer */}
-            {sidebarOpen && (
-              <div className="lg:hidden fixed inset-0 z-40 flex">
-                <div className="bg-black/50 flex-1" onClick={() => setSidebarOpen(false)} />
-                <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-72 bg-white h-full overflow-y-auto p-6 shadow-2xl">
-                  <div className="flex justify-between items-center mb-6">
-                    <span className="font-['Barlow_Condensed',sans-serif] font-black text-lg uppercase text-neutral-900">Filters</span>
-                    <button onClick={() => setSidebarOpen(false)}><BiX size={22} className="text-neutral-500" /></button>
-                  </div>
-                  <Sidebar />
-                </motion.div>
-              </div>
-            )}
-
-            {/* Product Grid */}
-            <div className="flex-1 min-w-0">
-              {filtered.length === 0 ? (
-                <div className="text-center py-20 text-neutral-400">
-                  <BiFilter size={48} className="mx-auto mb-4 opacity-30" />
-                  <p className="font-semibold">No parts match your filters.</p>
-                  <p className="text-sm mt-1">Try adjusting or resetting your filters.</p>
-                </div>
-              ) : (
-                <motion.div
-                  variants={stagger}
-                  initial="hidden"
-                  animate="visible"
-                  className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 text-red-600 rounded-2xl p-5 text-sm font-semibold">
+              {error}
+            </div>
+          ) : (searchQuery || hasStructuredFilters) ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="font-['Barlow_Condensed',sans-serif] font-black text-3xl uppercase text-neutral-900">
+                  Matching Products
+                </h2>
+                <Link
+                  to="/shop"
+                  className="text-[11px] font-black tracking-widest uppercase text-neutral-500 hover:text-amber-500 transition-colors"
                 >
-                  {filtered.map(product => (
-                    <motion.div
-                      key={product.id}
-                      variants={staggerItem}
-                      whileHover={{ y: -5, boxShadow: '0 20px 48px -8px rgba(0,0,0,0.15)' }}
-                      className="bg-white rounded-2xl overflow-hidden border border-neutral-200 flex flex-col"
-                    >
-                      {/* Image placeholder */}
-                      <div className="aspect-[4/3] bg-neutral-50 border-b border-neutral-100 flex items-center justify-center relative p-6">
-                        <div className="text-center text-neutral-300">
-                          <div className="w-16 h-16 rounded-xl bg-neutral-100 mx-auto mb-2 flex items-center justify-center">
-                            <IoShieldCheckmark size={28} className="text-neutral-300" />
-                          </div>
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-300">{product.category}</span>
-                        </div>
-                      </div>
-
-                      <div className="p-4 flex flex-col flex-1">
-                        <h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-2 flex-1">{product.name}</h3>
-
-                        {/* Price row */}
-                        <div className="flex items-end justify-between mt-auto pt-3 border-t border-neutral-100">
-                          <div>
-                            <span className="font-['Barlow_Condensed',sans-serif] font-black text-2xl text-neutral-900">
-                              ${product.price.toLocaleString()}
-                            </span>
-                            <span className="text-xs text-neutral-400 line-through ml-2">${product.originalPrice.toLocaleString()}</span>
-                          </div>
-                          <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => handleAdd(product.id)}
-                            className={`flex items-center gap-1.5 text-[11px] font-black tracking-widest uppercase px-4 py-2 rounded-lg transition-all ${addedIds.includes(product.id) ? 'bg-emerald-500 text-white' : 'bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white'}`}
-                          >
-                            <BiCart size={14} />
-                            {addedIds.includes(product.id) ? 'Added!' : 'Add'}
-                          </motion.button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
+                  Clear Search
+                </Link>
+              </div>
+              <ProductGrid products={searchProducts} addedIds={addedIds} onAdd={handleAdd} />
             </div>
-          </div>
+          ) : !categoryId ? (
+            <MotionDiv
+              variants={stagger}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
+            >
+              {categories.map((item) => (
+                <MotionDiv key={item._id} variants={staggerItem}>
+                  <Link
+                    to={`/shop/category/${item._id}`}
+                    className="group bg-white rounded-2xl overflow-hidden border border-neutral-200 flex flex-col hover:border-amber-300 transition-colors"
+                  >
+                    <div className="aspect-4/3 bg-neutral-100 overflow-hidden relative">
+                      <img
+                        src={item.image || FALLBACK_IMAGE}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-linear-to-t from-black/35 via-black/5 to-transparent" />
+                    </div>
+                    <div className="p-4 flex items-center justify-between gap-3">
+                      <h3 className="font-['Barlow_Condensed',sans-serif] font-black text-2xl uppercase text-neutral-900">
+                        {item.title}
+                      </h3>
+                      <span className="text-[11px] font-black tracking-widest uppercase text-amber-500">View</span>
+                    </div>
+                  </Link>
+                </MotionDiv>
+              ))}
+            </MotionDiv>
+          ) : (
+            <div className="space-y-8">
+              <div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6">
+                <h2 className="font-['Barlow_Condensed',sans-serif] font-black text-3xl uppercase text-neutral-900 mb-4">
+                  Sub Categories
+                </h2>
+                {subCategories.length === 0 ? (
+                  <p className="text-sm text-neutral-500">No sub-categories available for this category yet.</p>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {subCategories.map((item) => {
+                      const isActive = subCategoryId === item._id;
+                      return (
+                        <Link
+                          key={item._id}
+                          to={`/shop/category/${categoryId}/subcategory/${item._id}`}
+                          className={`rounded-xl border text-center px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${isActive
+                            ? 'bg-amber-400 border-amber-400 text-neutral-900'
+                            : 'border-neutral-300 text-neutral-700 hover:border-amber-400 hover:text-amber-600'
+                            }`}
+                        >
+                          {item.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-['Barlow_Condensed',sans-serif] font-black text-3xl uppercase text-neutral-900">
+                    {subCategoryId && activeSubCategory ? `${activeSubCategory.name} Products` : `${category?.title || 'Category'} Products`}
+                  </h2>
+                  {subCategoryId && (
+                    <Link
+                      to={`/shop/category/${categoryId}`}
+                      className="text-[11px] font-black tracking-widest uppercase text-neutral-500 hover:text-amber-500 transition-colors"
+                    >
+                      View All in Category
+                    </Link>
+                  )}
+                </div>
+                <ProductGrid
+                  products={subCategoryId ? subCategoryProducts : categoryProducts}
+                  addedIds={addedIds}
+                  onAdd={handleAdd}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </section>
-
     </div>
   );
 }

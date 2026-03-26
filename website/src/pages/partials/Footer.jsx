@@ -15,8 +15,7 @@ const shopLinks = [
 const helpLinks = [
 	{ label: 'Warranty & Returns', href: '/returns' },
 	{ label: 'Returns & Refund', href: '/returns' },
-	{ label: 'Track My Order', href: '/tracking' },
-	{ label: 'Find a Mechanic', href: '/find-mechanic' },
+	// { label: 'Track My Order', href: '/tracking' },
 	{ label: 'Contact Us', href: '/contact' },
 ];
 

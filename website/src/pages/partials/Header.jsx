@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
-import { BiPhone, BiEnvelope, BiSearch, BiCart, BiMenu, BiX, BiUser } from 'react-icons/bi';
+import { BiPhone, BiEnvelope, BiSearch, BiCart, BiMenu, BiX, BiUser, BiLogOut } from 'react-icons/bi';
 import { motion } from 'framer-motion';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import logoImg from '../../assets/american autos.png';
+import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 
 const NAV_LINKS = [
 	{ label: 'Home', href: '/' },
 	{ label: 'About', href: '/about' },
 	{ label: 'Shop', href: '/shop' },
-	{ label: 'Tracking', href: '/tracking' },
-	{ label: 'Find Mechanic', href: '/find-mechanic' },
+	// { label: 'Tracking', href: '/tracking' },
 	{ label: 'Contact', href: '/contact' },
 ];
 
@@ -19,6 +20,8 @@ export default function Header() {
 	const [scrolled, setScrolled] = useState(false);
 	const [query, setQuery] = useState('');
 	const navigate = useNavigate();
+	const { totalItems } = useCart();
+	const { user, isLoggedIn, logout } = useAuth();
 
 	useEffect(() => {
 		const fn = () => setScrolled(window.scrollY > 20);
@@ -32,6 +35,11 @@ export default function Header() {
 			navigate(`/shop?q=${encodeURIComponent(query.trim())}`);
 			setQuery('');
 		}
+	};
+
+	const handleLogout = async () => {
+		await logout();
+		navigate('/');
 	};
 
 	return (
@@ -49,11 +57,11 @@ export default function Header() {
 			{/* Main Nav */}
 			<nav className={`flex items-center justify-between px-6 lg:px-8 h-[68px] transition-all duration-300 ${scrolled ? 'bg-neutral-950/95 backdrop-blur-xl border-b border-amber-500/20 shadow-[0_4px_30px_rgba(0,0,0,0.6)]' : 'bg-neutral-950/85 backdrop-blur-md border-b border-white/5'}`}>
 				{/* Logo */}
-				<Link to="/" className="flex items-center flex-shrink-0 h-9 sm:h-10 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:ring-offset-2 focus:ring-offset-neutral-950 rounded">
+				<Link to="/" className="flex items-center shrink-0 h-9 sm:h-10 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:ring-offset-2 focus:ring-offset-neutral-950 rounded">
 					<img
 						src={logoImg}
 						alt="American Auto Salvageus"
-						className="h-full w-auto max-w-[140px] sm:max-w-[160px] lg:max-w-[200px] object-contain object-left"
+						className="h-full w-auto max-w-[140px] sm:max-w-40 lg:max-w-[200px] object-contain object-left"
 					/>
 				</Link>
 
@@ -79,19 +87,35 @@ export default function Header() {
 					<input type="text" value={query} onChange={e => setQuery(e.target.value)}
 						placeholder="e.g. 2017 Honda Civic engine..."
 						className="bg-transparent border-none outline-none text-white text-sm placeholder-neutral-500 px-4 py-2.5 w-full" />
-					<button type="submit" className="bg-amber-400 hover:bg-amber-500 text-neutral-900 px-4 py-2.5 transition-colors flex-shrink-0">
+					<button type="submit" className="bg-amber-400 hover:bg-amber-500 text-neutral-900 px-4 py-2.5 transition-colors shrink-0">
 						<BiSearch size={18} />
 					</button>
 				</form>
 
 				{/* Actions */}
 				<div className="hidden lg:flex items-center gap-3">
-					<Link to="/login" className="flex items-center gap-2 text-neutral-300 hover:text-amber-400 border border-neutral-700 hover:border-amber-400/50 px-4 py-2 rounded text-xs font-bold tracking-widest uppercase transition-all">
-						<BiUser size={14} /> Login
-					</Link>
+					{isLoggedIn ? (
+						<>
+							<Link to="/dashboard" className="flex items-center gap-2 text-neutral-300 hover:text-amber-400 border border-neutral-700 hover:border-amber-400/50 px-4 py-2 rounded text-xs font-bold tracking-widest uppercase transition-all">
+								<BiUser size={14} /> {'My Account'}
+							</Link>
+							<button onClick={handleLogout}
+								className="flex items-center gap-2 text-neutral-400 hover:text-red-400 border border-neutral-700 hover:border-red-500/40 px-3 py-2 rounded text-xs font-bold tracking-widest uppercase transition-all">
+								Log out<BiLogOut size={14} />
+							</button>
+						</>
+					) : (
+						<Link to="/login" className="flex items-center gap-2 text-neutral-300 hover:text-amber-400 border border-neutral-700 hover:border-amber-400/50 px-4 py-2 rounded text-xs font-bold tracking-widest uppercase transition-all">
+							<BiUser size={14} /> Login
+						</Link>
+					)}
 					<Link to="/cart" className="flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 px-4 py-2 rounded text-xs font-black tracking-widest uppercase transition-colors">
 						<BiCart size={15} /> Cart
-						<span className="bg-red-600 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">3</span>
+						{totalItems > 0 && (
+							<span className="bg-red-600 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+								{totalItems > 9 ? '9+' : totalItems}
+							</span>
+						)}
 					</Link>
 				</div>
 
@@ -120,13 +144,26 @@ export default function Header() {
 							{l.label}
 						</NavLink>
 					))}
-					<Link to="/login" onClick={() => setMenuOpen(false)}
-						className="py-3 border-b border-neutral-800 text-xs font-bold tracking-widest uppercase text-neutral-300 hover:text-amber-400 transition-colors">
-						Login
-					</Link>
+					{isLoggedIn ? (
+						<>
+							<Link to="/dashboard" onClick={() => setMenuOpen(false)}
+								className="py-3 border-b border-neutral-800 text-xs font-bold tracking-widest uppercase text-neutral-300 hover:text-amber-400 transition-colors">
+								Dashboard
+							</Link>
+							<button onClick={() => { handleLogout(); setMenuOpen(false); }}
+								className="py-3 border-b border-neutral-800 text-xs font-bold tracking-widest uppercase text-neutral-300 hover:text-red-400 transition-colors text-left">
+								Logout
+							</button>
+						</>
+					) : (
+						<Link to="/login" onClick={() => setMenuOpen(false)}
+							className="py-3 border-b border-neutral-800 text-xs font-bold tracking-widest uppercase text-neutral-300 hover:text-amber-400 transition-colors">
+							Login
+						</Link>
+					)}
 					<Link to="/cart" onClick={() => setMenuOpen(false)}
 						className="py-3 text-xs font-bold tracking-widest uppercase text-neutral-300 hover:text-amber-400 transition-colors">
-						Cart (3)
+						Cart {totalItems > 0 ? `(${totalItems})` : ''}
 					</Link>
 					<form onSubmit={handleSearch} className="flex mt-3 bg-neutral-800 border border-neutral-700 rounded overflow-hidden">
 						<input type="text" value={query} onChange={e => setQuery(e.target.value)}
