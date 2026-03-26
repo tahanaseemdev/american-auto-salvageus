@@ -11,15 +11,17 @@ export default function TrimsPage() {
 	const { hasPermission } = useAdminAuth();
 	const canEdit = hasPermission("edit_trims");
 	const [items, setItems] = useState([]);
+	const [years, setYears] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [showModal, setShowModal] = useState(false);
 	const [editingId, setEditingId] = useState("");
-	const [title, setTitle] = useState("");
+	const [form, setForm] = useState({ title: "", year: "" });
 	const [saving, setSaving] = useState(false);
 	const [globalFilter, setGlobalFilter] = useState("");
 
 	useEffect(() => {
 		fetchItems();
+		fetchYears();
 	}, []);
 
 	const fetchItems = async () => {
@@ -34,31 +36,44 @@ export default function TrimsPage() {
 		}
 	};
 
+	const fetchYears = async () => {
+		try {
+			const { data } = await api.get("/catalog/years");
+			setYears(data.data || []);
+		} catch {
+			setYears([]);
+		}
+	};
+
 	const openAddModal = () => {
 		setEditingId("");
-		setTitle("");
+		setForm({ title: "", year: "" });
 		setShowModal(true);
 	};
 
 	const openEditModal = (row) => {
 		setEditingId(row._id);
-		setTitle(row.title || "");
+		setForm({
+			title: row.title || "",
+			year: row.year?._id || row.year || "",
+		});
 		setShowModal(true);
 	};
 
 	const saveItem = async (event) => {
 		event.preventDefault();
-		if (!title.trim()) return;
+		if (!form.title.trim() || !form.year) return;
 		setSaving(true);
 		try {
+			const payload = { title: form.title.trim(), year: form.year };
 			if (editingId) {
-				await api.put(`/catalog/trims/${editingId}`, { title: title.trim() });
+				await api.put(`/catalog/trims/${editingId}`, payload);
 			} else {
-				await api.post("/catalog/trims", { title: title.trim() });
+				await api.post("/catalog/trims", payload);
 			}
 			setShowModal(false);
 			setEditingId("");
-			setTitle("");
+			setForm({ title: "", year: "" });
 			fetchItems();
 		} catch {
 			// ignore
@@ -78,6 +93,7 @@ export default function TrimsPage() {
 	};
 
 	const numberBody = (_row, options) => options.rowIndex + 1;
+	const yearBody = (row) => row.year?.title || "-";
 	const actionsBody = (row) => (
 		<div className="d-flex align-items-center gap-2">
 			<button type="button" className="admin-row-action" aria-label="Edit trim" onClick={() => openEditModal(row)}>
@@ -117,12 +133,13 @@ export default function TrimsPage() {
 					paginator
 					rows={7}
 					globalFilter={globalFilter}
-					globalFilterFields={["title"]}
+					globalFilterFields={["title", "year.title"]}
 					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
 					emptyMessage="No trims found."
 				>
 					<Column header="No" body={numberBody} style={{ width: "80px" }} />
 					<Column field="title" header="Title" sortable />
+					<Column header="Year" body={yearBody} sortable />
 					<Column field="createdAt" header="Created" sortable body={(r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "-"} />
 					{canEdit && <Column header="Actions" body={actionsBody} style={{ width: "120px" }} />}
 				</DataTable>
@@ -134,9 +151,22 @@ export default function TrimsPage() {
 				</Modal.Header>
 				<Form onSubmit={saveItem}>
 					<Modal.Body>
+						<Form.Group className="mb-3">
+							<Form.Label>Year</Form.Label>
+							<Form.Select
+								value={form.year}
+								onChange={(event) => setForm((prev) => ({ ...prev, year: event.target.value }))}
+								required
+							>
+								<option value="">- Select year -</option>
+								{years.map((item) => (
+									<option key={item._id} value={item._id}>{item.title}</option>
+								))}
+							</Form.Select>
+						</Form.Group>
 						<Form.Group>
 							<Form.Label>Title</Form.Label>
-							<Form.Control value={title} onChange={(event) => setTitle(event.target.value)} required />
+							<Form.Control value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} required />
 						</Form.Group>
 					</Modal.Body>
 					<Modal.Footer>

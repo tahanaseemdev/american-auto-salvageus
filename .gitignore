@@ -132,3 +132,4 @@ dist
 **/public/tinyMce/**/*
 server/assets/**/*[.jpg,.jpeg,.png,.gif,.bmp,.svg,.ico,.webp,.mp4,.avi,.mov,.mkv,.wmv,.flv,.webm,.key]
 **/*.zip
+data

@@ -5,6 +5,7 @@ import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { InputText } from "primereact/inputtext";
 import api from "../utils/api";
+import { resolveImageUrl } from "../utils/image";
 import { useAdminAuth } from "../context/AuthContext";
 
 export default function CategoriesPage() {
@@ -109,7 +110,7 @@ export default function CategoriesPage() {
 
 	const imageBody = (row) => {
 		if (!row.image) return "-";
-		return <img src={row.image} alt={row.title} style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px" }} />;
+		return <img src={resolveImageUrl(row.image)} alt={row.title} style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px" }} />;
 	};
 
 	const featuredBody = (row) => (
@@ -186,7 +187,7 @@ export default function CategoriesPage() {
 							<Form.Text className="text-muted">Optional. Upload from your device.</Form.Text>
 							{existingImage && !imageFile && (
 								<div className="mt-2">
-									<img src={existingImage} alt="Current" style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px" }} />
+									<img src={resolveImageUrl(existingImage)} alt="Current" style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px" }} />
 								</div>
 							)}
 						</Form.Group>

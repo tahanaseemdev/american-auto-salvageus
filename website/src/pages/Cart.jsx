@@ -4,6 +4,7 @@ import { FaTruck } from 'react-icons/fa';
 import { HiSparkles } from 'react-icons/hi';
 import { IoShieldCheckmark } from "react-icons/io5";
 import { useCart } from '../context/CartContext';
+import { resolveImageUrl } from '../utils/image';
 
 export default function Cart() {
   const { items, updateItem, removeItem, subtotal } = useCart();
@@ -74,9 +75,9 @@ export default function Cart() {
                         className="bg-white border border-neutral-200 rounded-2xl p-5 flex gap-4"
                       >
                         {/* Image placeholder */}
-                        <div className="w-20 h-20 rounded-xl bg-neutral-100 flex items-center justify-center flex-shrink-0 border border-neutral-200">
+                        <div className="w-20 h-20 rounded-xl bg-neutral-100 flex items-center justify-center shrink-0 border border-neutral-200">
                           {item.product?.image
-                            ? <img src={item.product.image} alt={name} className="w-full h-full object-cover rounded-xl" />
+                            ? <img src={resolveImageUrl(item.product.image)} alt={name} className="w-full h-full object-cover rounded-xl" />
                             : <IoShieldCheckmark size={28} className="text-neutral-300" />
                           }
                         </div>
@@ -86,7 +87,7 @@ export default function Cart() {
                           <div className="flex items-start justify-between gap-2">
                             <h3 className="font-semibold text-sm text-neutral-800 leading-snug">{name}</h3>
                             <button onClick={() => removeItem(pid)}
-                              className="flex-shrink-0 text-neutral-300 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50">
+                              className="shrink-0 text-neutral-300 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50">
                               <BiTrash size={17} />
                             </button>
                           </div>
@@ -99,7 +100,7 @@ export default function Cart() {
                                 className="px-3 py-2 hover:bg-amber-50 hover:text-amber-600 transition-colors text-neutral-500">
                                 <BiMinus size={14} />
                               </button>
-                              <span className="min-w-[28px] text-center text-sm font-bold text-neutral-800">{qty}</span>
+                              <span className="min-w-7 text-center text-sm font-bold text-neutral-800">{qty}</span>
                               <button onClick={() => updateItem(pid, qty + 1)}
                                 className="px-3 py-2 hover:bg-amber-50 hover:text-amber-600 transition-colors text-neutral-500">
                                 <BiPlus size={14} />

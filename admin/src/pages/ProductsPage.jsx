@@ -5,6 +5,7 @@ import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { InputText } from "primereact/inputtext";
 import api from "../utils/api";
+import { resolveImageUrl } from "../utils/image";
 import { useAdminAuth } from "../context/AuthContext";
 
 export default function ProductsPage() {
@@ -28,13 +29,35 @@ export default function ProductsPage() {
 	useEffect(() => {
 		fetchProducts();
 		fetchCategories();
-		fetchVehicleOptions();
 	}, []);
 
 	useEffect(() => {
-		if (form.category) fetchSubCategories(form.category);
-		else setSubCategories([]);
-	}, [form.category]);
+		fetchSubCategories();
+	}, []);
+
+	useEffect(() => {
+		if (form.subCategory) {
+			fetchModels(form.subCategory);
+		} else {
+			setModels([]);
+		}
+	}, [form.subCategory]);
+
+	useEffect(() => {
+		if (form.model) {
+			fetchYears(form.model);
+		} else {
+			setYears([]);
+		}
+	}, [form.model]);
+
+	useEffect(() => {
+		if (form.year) {
+			fetchTrims(form.year);
+		} else {
+			setTrims([]);
+		}
+	}, [form.year]);
 
 	const fetchProducts = async () => {
 		setLoading(true);
@@ -53,35 +76,65 @@ export default function ProductsPage() {
 		} catch { /* ignore */ }
 	};
 
-	const fetchSubCategories = async (categoryId) => {
+	const fetchSubCategories = async () => {
 		try {
-			const { data } = await api.get(`/categories/sub/list?category=${categoryId}`);
+			const { data } = await api.get("/categories/sub/list");
 			setSubCategories(data.data || []);
 		} catch {
 			setSubCategories([]);
 		}
 	};
 
-	const fetchVehicleOptions = async () => {
+	const fetchModels = async (makeId) => {
 		try {
-			const [modelsRes, yearsRes, trimsRes] = await Promise.all([
-				api.get("/catalog/models"),
-				api.get("/catalog/years"),
-				api.get("/catalog/trims"),
-			]);
-			setModels(modelsRes?.data?.data || []);
-			setYears(yearsRes?.data?.data || []);
-			setTrims(trimsRes?.data?.data || []);
+			const { data } = await api.get(`/catalog/models?make=${makeId}`);
+			setModels(data.data || []);
 		} catch {
 			setModels([]);
+		}
+	};
+
+	const fetchYears = async (modelId) => {
+		try {
+			const { data } = await api.get(`/catalog/years?model=${modelId}`);
+			setYears(data.data || []);
+		} catch {
 			setYears([]);
+		}
+	};
+
+	const fetchTrims = async (yearId) => {
+		try {
+			const { data } = await api.get(`/catalog/trims?year=${yearId}`);
+			setTrims(data.data || []);
+		} catch {
 			setTrims([]);
 		}
 	};
 
 	const onChange = (event) => {
 		const { name, value } = event.target;
-		setForm((prev) => ({ ...prev, [name]: value }));
+		setForm((prev) => {
+			const next = { ...prev, [name]: value };
+			if (name === "category") {
+				next.model = "";
+				next.year = "";
+				next.trim = "";
+			}
+			if (name === "subCategory") {
+				next.model = "";
+				next.year = "";
+				next.trim = "";
+			}
+			if (name === "model") {
+				next.year = "";
+				next.trim = "";
+			}
+			if (name === "year") {
+				next.trim = "";
+			}
+			return next;
+		});
 	};
 
 	const onSelectImage = (event) => {
@@ -106,9 +159,9 @@ export default function ProductsPage() {
 			const uploadedImageUrl = await uploadImageAndGetUrl();
 			const payload = {
 				name: form.name.trim(),
-				model: form.model.trim(),
-				year: form.year.trim(),
-				trim: form.trim.trim(),
+				model: form.model || null,
+				year: form.year || null,
+				trim: form.trim || null,
 				featured: Boolean(form.featured),
 				price: Number(form.price) || 0,
 				image: uploadedImageUrl || existingImage || "",
@@ -146,9 +199,9 @@ export default function ProductsPage() {
 		setExistingImage(row.image || "");
 		setForm({
 			name: row.name || "",
-			model: row.model || "",
-			year: row.year ?? "",
-			trim: row.trim || "",
+			model: row.model?._id || row.model || "",
+			year: row.year?._id || row.year || "",
+			trim: row.trim?._id || row.trim || "",
 			featured: Boolean(row.featured),
 			category: row.category?._id || row.category || "",
 			subCategory: row.subCategory?._id || row.subCategory || "",
@@ -170,15 +223,15 @@ export default function ProductsPage() {
 	const numberBody = (_row, options) => options.rowIndex + 1;
 	const categoryBody = (row) => row.category?.title || "—";
 	const subCategoryBody = (row) => row.subCategory?.name || "—";
-	const modelBody = (row) => row.model || "—";
-	const yearBody = (row) => row.year || "—";
-	const trimBody = (row) => row.trim || "—";
+	const modelBody = (row) => row.model?.title || "—";
+	const yearBody = (row) => row.year?.title || "—";
+	const trimBody = (row) => row.trim?.title || "—";
 	const featuredBody = (row) => (
 		<span className={`badge ${row.featured ? "text-bg-success" : "text-bg-secondary"}`}>{row.featured ? "Yes" : "No"}</span>
 	);
 	const imageBody = (row) => {
 		if (!row.image) return "-";
-		return <img src={row.image} alt={row.name} style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px" }} />;
+		return <img src={resolveImageUrl(row.image)} alt={row.name} style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px" }} />;
 	};
 
 	const actionsBody = (row) => (
@@ -220,7 +273,7 @@ export default function ProductsPage() {
 					paginator
 					rows={7}
 					globalFilter={globalFilter}
-					globalFilterFields={["name", "model", "trim", "year", "category.title", "subCategory.name"]}
+					globalFilterFields={["name", "model.title", "trim.title", "year.title", "category.title", "subCategory.name"]}
 					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
 					emptyMessage="No products found."
 				>
@@ -251,23 +304,23 @@ export default function ProductsPage() {
 						<div className="row g-3 mb-3">
 							<div className="col-md-4">
 								<Form.Label>Model</Form.Label>
-								<Form.Select name="model" value={form.model} onChange={onChange}>
+								<Form.Select name="model" value={form.model} onChange={onChange} disabled={!form.subCategory}>
 									<option value="">— Select model —</option>
-									{models.map((item) => <option key={item._id} value={item.title}>{item.title}</option>)}
+									{models.map((item) => <option key={item._id} value={item._id}>{item.title}</option>)}
 								</Form.Select>
 							</div>
 							<div className="col-md-4">
 								<Form.Label>Year</Form.Label>
-								<Form.Select name="year" value={form.year} onChange={onChange}>
+								<Form.Select name="year" value={form.year} onChange={onChange} disabled={!form.model}>
 									<option value="">— Select year —</option>
-									{years.map((item) => <option key={item._id} value={item.title}>{item.title}</option>)}
+									{years.map((item) => <option key={item._id} value={item._id}>{item.title}</option>)}
 								</Form.Select>
 							</div>
 							<div className="col-md-4">
 								<Form.Label>Trim</Form.Label>
-								<Form.Select name="trim" value={form.trim} onChange={onChange}>
+								<Form.Select name="trim" value={form.trim} onChange={onChange} disabled={!form.year}>
 									<option value="">— Select trim —</option>
-									{trims.map((item) => <option key={item._id} value={item.title}>{item.title}</option>)}
+									{trims.map((item) => <option key={item._id} value={item._id}>{item.title}</option>)}
 								</Form.Select>
 							</div>
 						</div>
@@ -286,7 +339,7 @@ export default function ProductsPage() {
 							<Form.Text className="text-muted">Optional. Upload from your device.</Form.Text>
 							{existingImage && !imageFile && (
 								<div className="mt-2">
-									<img src={existingImage} alt="Current" style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px" }} />
+									<img src={resolveImageUrl(existingImage)} alt="Current" style={{ width: "44px", height: "44px", objectFit: "cover", borderRadius: "8px" }} />
 								</div>
 							)}
 						</Form.Group>
@@ -300,7 +353,7 @@ export default function ProductsPage() {
 							</div>
 							<div className="col-md-6">
 								<Form.Label>Make</Form.Label>
-								<Form.Select name="subCategory" value={form.subCategory} onChange={onChange}>
+								<Form.Select name="subCategory" value={form.subCategory} onChange={onChange} disabled={!form.category}>
 									<option value="">— None —</option>
 									{subCategories.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
 								</Form.Select>

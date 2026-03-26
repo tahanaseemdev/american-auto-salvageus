@@ -11,15 +11,17 @@ export default function ModelsPage() {
 	const { hasPermission } = useAdminAuth();
 	const canEdit = hasPermission("edit_models");
 	const [items, setItems] = useState([]);
+	const [makes, setMakes] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [showModal, setShowModal] = useState(false);
 	const [editingId, setEditingId] = useState("");
-	const [title, setTitle] = useState("");
+	const [form, setForm] = useState({ title: "", make: "" });
 	const [saving, setSaving] = useState(false);
 	const [globalFilter, setGlobalFilter] = useState("");
 
 	useEffect(() => {
 		fetchItems();
+		fetchMakes();
 	}, []);
 
 	const fetchItems = async () => {
@@ -34,31 +36,44 @@ export default function ModelsPage() {
 		}
 	};
 
+	const fetchMakes = async () => {
+		try {
+			const { data } = await api.get("/categories/sub/list");
+			setMakes(data.data || []);
+		} catch {
+			setMakes([]);
+		}
+	};
+
 	const openAddModal = () => {
 		setEditingId("");
-		setTitle("");
+		setForm({ title: "", make: "" });
 		setShowModal(true);
 	};
 
 	const openEditModal = (row) => {
 		setEditingId(row._id);
-		setTitle(row.title || "");
+		setForm({
+			title: row.title || "",
+			make: row.make?._id || row.make || "",
+		});
 		setShowModal(true);
 	};
 
 	const saveItem = async (event) => {
 		event.preventDefault();
-		if (!title.trim()) return;
+		if (!form.title.trim() || !form.make) return;
 		setSaving(true);
 		try {
+			const payload = { title: form.title.trim(), make: form.make };
 			if (editingId) {
-				await api.put(`/catalog/models/${editingId}`, { title: title.trim() });
+				await api.put(`/catalog/models/${editingId}`, payload);
 			} else {
-				await api.post("/catalog/models", { title: title.trim() });
+				await api.post("/catalog/models", payload);
 			}
 			setShowModal(false);
 			setEditingId("");
-			setTitle("");
+			setForm({ title: "", make: "" });
 			fetchItems();
 		} catch {
 			// ignore
@@ -78,6 +93,7 @@ export default function ModelsPage() {
 	};
 
 	const numberBody = (_row, options) => options.rowIndex + 1;
+	const makeBody = (row) => row.make?.name || "-";
 	const actionsBody = (row) => (
 		<div className="d-flex align-items-center gap-2">
 			<button type="button" className="admin-row-action" aria-label="Edit model" onClick={() => openEditModal(row)}>
@@ -117,12 +133,13 @@ export default function ModelsPage() {
 					paginator
 					rows={7}
 					globalFilter={globalFilter}
-					globalFilterFields={["title"]}
+					globalFilterFields={["title", "make.name"]}
 					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
 					emptyMessage="No models found."
 				>
 					<Column header="No" body={numberBody} style={{ width: "80px" }} />
 					<Column field="title" header="Title" sortable />
+					<Column header="Make" body={makeBody} sortable />
 					<Column field="createdAt" header="Created" sortable body={(r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "-"} />
 					{canEdit && <Column header="Actions" body={actionsBody} style={{ width: "120px" }} />}
 				</DataTable>
@@ -134,9 +151,22 @@ export default function ModelsPage() {
 				</Modal.Header>
 				<Form onSubmit={saveItem}>
 					<Modal.Body>
+						<Form.Group className="mb-3">
+							<Form.Label>Make</Form.Label>
+							<Form.Select
+								value={form.make}
+								onChange={(event) => setForm((prev) => ({ ...prev, make: event.target.value }))}
+								required
+							>
+								<option value="">- Select make -</option>
+								{makes.map((item) => (
+									<option key={item._id} value={item._id}>{item.name}</option>
+								))}
+							</Form.Select>
+						</Form.Group>
 						<Form.Group>
 							<Form.Label>Title</Form.Label>
-							<Form.Control value={title} onChange={(event) => setTitle(event.target.value)} required />
+							<Form.Control value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} required />
 						</Form.Group>
 					</Modal.Body>
 					<Modal.Footer>

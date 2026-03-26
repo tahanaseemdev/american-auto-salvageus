@@ -122,9 +122,10 @@ async function uploadImage(req, res, next) {
 			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Image file is required.");
 		}
 
-		const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+		const imageUrl = `/uploads/${req.file.filename}`;
 		return sendJsonResponse(res, HTTP_STATUS_CODES.CREATED, true, "Image uploaded.", {
 			filename: req.file.filename,
+			imagePath: imageUrl,
 			imageUrl,
 		});
 	} catch (err) {

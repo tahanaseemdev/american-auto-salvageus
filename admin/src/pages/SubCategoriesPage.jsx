@@ -11,17 +11,15 @@ export default function SubCategoriesPage() {
 	const { hasPermission } = useAdminAuth();
 	const canEditSubCategories = hasPermission("edit_sub_categories");
 	const [subCategories, setSubCategories] = useState([]);
-	const [categories, setCategories] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [showModal, setShowModal] = useState(false);
 	const [editingId, setEditingId] = useState("");
 	const [globalFilter, setGlobalFilter] = useState("");
-	const [form, setForm] = useState({ name: "", category: "" });
+	const [form, setForm] = useState({ name: "" });
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
 		fetchSubCategories();
-		fetchCategories();
 	}, []);
 
 	const fetchSubCategories = async () => {
@@ -36,15 +34,6 @@ export default function SubCategoriesPage() {
 		}
 	};
 
-	const fetchCategories = async () => {
-		try {
-			const { data } = await api.get("/categories");
-			setCategories(data.data || []);
-		} catch {
-			// ignore
-		}
-	};
-
 	const onChange = (event) => {
 		const { name, value } = event.target;
 		setForm((prev) => ({ ...prev, [name]: value }));
@@ -52,12 +41,11 @@ export default function SubCategoriesPage() {
 
 	const saveSubCategory = async (event) => {
 		event.preventDefault();
-		if (!form.name.trim() || !form.category) return;
+		if (!form.name.trim()) return;
 		setSaving(true);
 		try {
 			const payload = {
 				name: form.name.trim(),
-				category: form.category,
 			};
 
 			if (editingId) {
@@ -66,7 +54,7 @@ export default function SubCategoriesPage() {
 				await api.post("/categories/sub", payload);
 			}
 
-			setForm({ name: "", category: "" });
+			setForm({ name: "" });
 			setEditingId("");
 			setShowModal(false);
 			fetchSubCategories();
@@ -79,13 +67,13 @@ export default function SubCategoriesPage() {
 
 	const openAddModal = () => {
 		setEditingId("");
-		setForm({ name: "", category: "" });
+		setForm({ name: "" });
 		setShowModal(true);
 	};
 
 	const openEditModal = (row) => {
 		setEditingId(row._id);
-		setForm({ name: row.name || "", category: row.category?._id || row.category || "" });
+		setForm({ name: row.name || "" });
 		setShowModal(true);
 	};
 
@@ -100,8 +88,6 @@ export default function SubCategoriesPage() {
 	};
 
 	const numberBody = (_row, options) => options.rowIndex + 1;
-	const categoryBody = (row) => row.category?.title || "-";
-
 	const actionsBody = (row) => (
 		<div className="d-flex align-items-center gap-2">
 			<button type="button" className="admin-row-action" aria-label="Edit make" onClick={() => openEditModal(row)}>
@@ -141,13 +127,12 @@ export default function SubCategoriesPage() {
 					paginator
 					rows={7}
 					globalFilter={globalFilter}
-					globalFilterFields={["name", "category.title"]}
+					globalFilterFields={["name"]}
 					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
 					emptyMessage="No sub categories found."
 				>
 					<Column header="No" body={numberBody} style={{ width: "80px" }} />
 					<Column field="name" header="Make Title" sortable />
-					<Column header="Part" body={categoryBody} sortable />
 					<Column field="createdAt" header="Created" sortable body={(r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "-"} />
 					{canEditSubCategories && <Column header="Actions" body={actionsBody} style={{ width: "120px" }} />}
 				</DataTable>
@@ -162,13 +147,6 @@ export default function SubCategoriesPage() {
 						<Form.Group className="mb-3">
 							<Form.Label>Make Title</Form.Label>
 							<Form.Control name="name" value={form.name} onChange={onChange} required />
-						</Form.Group>
-						<Form.Group className="mb-3">
-							<Form.Label>Part</Form.Label>
-							<Form.Select name="category" value={form.category} onChange={onChange} required>
-								<option value="">- Select part -</option>
-								{categories.map((c) => <option key={c._id} value={c._id}>{c.title}</option>)}
-							</Form.Select>
 						</Form.Group>
 					</Modal.Body>
 					<Modal.Footer>

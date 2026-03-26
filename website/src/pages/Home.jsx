@@ -9,6 +9,7 @@ import { BiCreditCard } from 'react-icons/bi';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay } from 'swiper/modules';
 import api from '../utils/api';
+import { resolveImageUrl } from '../utils/image';
 import 'swiper/css';
 /* ─── Animation Variants ─── */
 const fadeUp = {
@@ -265,21 +266,18 @@ export default function Home() {
 
 		async function loadFilterOptions() {
 			try {
-				const [partsRes, makesRes, modelsRes, yearsRes, trimsRes] = await Promise.all([
+				const [partsRes, makesRes] = await Promise.all([
 					api.get('/categories'),
 					api.get('/categories/sub/list'),
-					api.get('/catalog/models'),
-					api.get('/catalog/years'),
-					api.get('/catalog/trims'),
 				]);
 
 				if (cancelled) return;
 				setFilterOptions({
 					parts: partsRes?.data?.data || [],
 					makes: makesRes?.data?.data || [],
-					models: modelsRes?.data?.data || [],
-					years: yearsRes?.data?.data || [],
-					trims: trimsRes?.data?.data || [],
+					models: [],
+					years: [],
+					trims: [],
 				});
 			} catch {
 				if (!cancelled) {
@@ -294,10 +292,105 @@ export default function Home() {
 		};
 	}, []);
 
+	useEffect(() => {
+		let cancelled = false;
+
+		async function loadModels() {
+			if (!filters.make) {
+				setFilterOptions((prev) => ({ ...prev, models: [], years: [], trims: [] }));
+				return;
+			}
+
+			try {
+				const { data } = await api.get(`/catalog/models?make=${filters.make}`);
+				if (cancelled) return;
+				setFilterOptions((prev) => ({ ...prev, models: data?.data || [], years: [], trims: [] }));
+			} catch {
+				if (!cancelled) {
+					setFilterOptions((prev) => ({ ...prev, models: [], years: [], trims: [] }));
+				}
+			}
+		}
+
+		loadModels();
+		return () => {
+			cancelled = true;
+		};
+	}, [filters.make]);
+
+	useEffect(() => {
+		let cancelled = false;
+
+		async function loadYears() {
+			if (!filters.model) {
+				setFilterOptions((prev) => ({ ...prev, years: [], trims: [] }));
+				return;
+			}
+
+			try {
+				const { data } = await api.get(`/catalog/years?model=${filters.model}`);
+				if (cancelled) return;
+				setFilterOptions((prev) => ({ ...prev, years: data?.data || [], trims: [] }));
+			} catch {
+				if (!cancelled) {
+					setFilterOptions((prev) => ({ ...prev, years: [], trims: [] }));
+				}
+			}
+		}
+
+		loadYears();
+		return () => {
+			cancelled = true;
+		};
+	}, [filters.model]);
+
+	useEffect(() => {
+		let cancelled = false;
+
+		async function loadTrims() {
+			if (!filters.year) {
+				setFilterOptions((prev) => ({ ...prev, trims: [] }));
+				return;
+			}
+
+			try {
+				const { data } = await api.get(`/catalog/trims?year=${filters.year}`);
+				if (cancelled) return;
+				setFilterOptions((prev) => ({ ...prev, trims: data?.data || [] }));
+			} catch {
+				if (!cancelled) {
+					setFilterOptions((prev) => ({ ...prev, trims: [] }));
+				}
+			}
+		}
+
+		loadTrims();
+		return () => {
+			cancelled = true;
+		};
+	}, [filters.year]);
+
 	const onFilterChange = (name, value) => {
 		setFilters((prev) => {
 			const next = { ...prev, [name]: value };
-			if (name === 'part') next.make = '';
+			if (name === 'part') {
+				next.make = '';
+				next.model = '';
+				next.year = '';
+				next.trim = '';
+			}
+			if (name === 'make') {
+				next.model = '';
+				next.year = '';
+				next.trim = '';
+			}
+			if (name === 'model') {
+				next.year = '';
+				next.trim = '';
+			}
+			if (name === 'year') {
+				next.trim = '';
+			}
 			return next;
 		});
 	};
@@ -314,16 +407,14 @@ export default function Home() {
 		navigate(query ? `/shop?${query}` : '/shop');
 	};
 
-	const makeOptions = filters.part
-		? filterOptions.makes.filter((item) => item.category?._id === filters.part || item.category === filters.part)
-		: filterOptions.makes;
+	const makeOptions = filterOptions.makes;
 
 	const displayedPopularParts = featuredProducts.length
 		? featuredProducts.map((part) => ({
 			id: part._id,
 			title: part.name,
 			price: `$${Number(part.price || 0).toFixed(2)}`,
-			img: part.image || 'https://allusedautoparts.world/aaps-img/transmission.jpg',
+			img: part.image ? resolveImageUrl(part.image) : 'https://allusedautoparts.world/aaps-img/transmission.jpg',
 			tag: part.category?.title || 'Featured',
 		}))
 		: popularParts;
@@ -331,7 +422,7 @@ export default function Home() {
 	const displayedPartsGrid = featuredCategories.length
 		? featuredCategories.map((category) => ({
 			title: category.title,
-			img: category.image || 'https://allusedautoparts.world/aaps-img/alternator.jpg',
+			img: category.image ? resolveImageUrl(category.image) : 'https://allusedautoparts.world/aaps-img/alternator.jpg',
 			href: `/shop/category/${category._id}`,
 		}))
 		: partsGrid;
@@ -370,28 +461,28 @@ export default function Home() {
 									</div>
 									<div className="flex flex-col gap-1">
 										<label className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">{SEARCH_FIELDS[2]}</label>
-										<select value={filters.model} onChange={(event) => onFilterChange('model', event.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer">
+										<select value={filters.model} onChange={(event) => onFilterChange('model', event.target.value)} disabled={!filters.make} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer disabled:opacity-50">
 											<option value="">Select...</option>
 											{filterOptions.models.map((item) => (
-												<option key={item._id} value={item.title}>{item.title}</option>
+												<option key={item._id} value={item._id}>{item.title}</option>
 											))}
 										</select>
 									</div>
 									<div className="flex flex-col gap-1">
 										<label className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">{SEARCH_FIELDS[3]}</label>
-										<select value={filters.year} onChange={(event) => onFilterChange('year', event.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer">
+										<select value={filters.year} onChange={(event) => onFilterChange('year', event.target.value)} disabled={!filters.model} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer disabled:opacity-50">
 											<option value="">Select...</option>
 											{filterOptions.years.map((item) => (
-												<option key={item._id} value={item.title}>{item.title}</option>
+												<option key={item._id} value={item._id}>{item.title}</option>
 											))}
 										</select>
 									</div>
 									<div className="flex flex-col gap-1">
 										<label className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">{SEARCH_FIELDS[4]}</label>
-										<select value={filters.trim} onChange={(event) => onFilterChange('trim', event.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer">
+										<select value={filters.trim} onChange={(event) => onFilterChange('trim', event.target.value)} disabled={!filters.year} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer disabled:opacity-50">
 											<option value="">Select...</option>
 											{filterOptions.trims.map((item) => (
-												<option key={item._id} value={item.title}>{item.title}</option>
+												<option key={item._id} value={item._id}>{item.title}</option>
 											))}
 										</select>
 									</div>
