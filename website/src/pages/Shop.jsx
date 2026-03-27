@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { BiCart, BiChevronRight } from 'react-icons/bi';
+import { BiChevronRight } from 'react-icons/bi';
 import { IoShieldCheckmark, IoGridOutline } from 'react-icons/io5';
 import { HiSparkles } from 'react-icons/hi';
 import api from '../utils/api';
-import { useCart } from '../context/CartContext';
 import { resolveImageUrl } from '../utils/image';
 
 const fadeUp = {
@@ -22,8 +21,6 @@ const staggerItem = {
 };
 
 const MotionDiv = motion.div;
-const MotionButton = motion.button;
-
 function Reveal({ children, className = '', delay = 0, variants = fadeUp }) {
 	const ref = useRef(null);
 	const inView = useInView(ref, { once: true, margin: '-60px' });
@@ -125,7 +122,7 @@ function Breadcrumbs({ category, make, model, year, trim, categoryId, subCategor
 	);
 }
 
-function ProductGrid({ products, addedIds, onAdd }) {
+function ProductGrid({ products }) {
 	if (!products.length) {
 		return (
 			<div className="text-center py-16 text-neutral-400 border border-dashed border-neutral-300 rounded-2xl bg-white/70">
@@ -167,21 +164,13 @@ function ProductGrid({ products, addedIds, onAdd }) {
 					<div className="p-4 flex flex-col flex-1">
 						<h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-2 flex-1">{product.name}</h3>
 
-						<div className="flex items-end justify-between mt-auto pt-3 border-t border-neutral-100">
-							<span className="font-['Barlow_Condensed',sans-serif] font-black text-2xl text-neutral-900">
-								${Number(product.price || 0).toLocaleString()}
-							</span>
-							<MotionButton
-								whileTap={{ scale: 0.95 }}
-								onClick={() => onAdd(product)}
-								className={`flex items-center gap-1.5 text-[11px] font-black tracking-widest uppercase px-4 py-2 rounded-lg transition-all ${addedIds.includes(product._id)
-									? 'bg-emerald-500 text-white'
-									: 'bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white'
-									}`}
+						<div className="flex items-end justify-end mt-auto pt-3 border-t border-neutral-100">
+							<Link
+								to={`/product/${product._id}`}
+								className="flex items-center gap-1.5 text-[11px] font-black tracking-widest uppercase px-4 py-2 rounded-lg transition-all bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white"
 							>
-								<BiCart size={14} />
-								{addedIds.includes(product._id) ? 'Added!' : 'Add'}
-							</MotionButton>
+								View Details
+							</Link>
 						</div>
 					</div>
 				</MotionDiv>
@@ -230,14 +219,12 @@ export default function Shop() {
 	const modelFilter = (searchParams.get('model') || '').trim();
 	const yearFilter = (searchParams.get('year') || '').trim();
 	const trimFilter = (searchParams.get('trim') || '').trim();
-	const { addItem } = useCart();
 
 	const [categories, setCategories] = useState([]);
 	const [categoryDetail, setCategoryDetail] = useState(null);
 	const [searchProducts, setSearchProducts] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
-	const [addedIds, setAddedIds] = useState([]);
 
 	const hasStructuredFilters = Boolean(partFilter || makeFilter || modelFilter || yearFilter || trimFilter);
 
@@ -406,14 +393,6 @@ export default function Shop() {
 		activeTrim,
 	]);
 
-	const handleAdd = async (product) => {
-		await addItem(product, 1);
-		setAddedIds((prev) => [...prev, product._id]);
-		window.setTimeout(() => {
-			setAddedIds((prev) => prev.filter((id) => id !== product._id));
-		}, 1200);
-	};
-
 	let levelConfig = null;
 	if (categoryId && !subCategoryId) {
 		levelConfig = {
@@ -516,7 +495,7 @@ export default function Shop() {
 									Clear Search
 								</Link>
 							</div>
-							<ProductGrid products={searchProducts} addedIds={addedIds} onAdd={handleAdd} />
+							<ProductGrid products={searchProducts} />
 						</div>
 					) : !categoryId ? (
 						<MotionDiv
@@ -578,7 +557,7 @@ export default function Shop() {
 										</Link>
 									)}
 								</div>
-								<ProductGrid products={categoryProducts} addedIds={addedIds} onAdd={handleAdd} />
+								<ProductGrid products={categoryProducts} />
 							</div>
 						</div>
 					)}

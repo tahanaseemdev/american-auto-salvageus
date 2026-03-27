@@ -41,14 +41,23 @@ async function createOrder(req, res, next) {
 
 		// Build the WhatsApp message
 		const itemLines = products
-			.map((p) => `• ${p.name} (x${p.quantity}) — $${(p.price * p.quantity).toFixed(2)}`)
+			.map((p) => {
+				const quantity = Number(p.quantity) || 1;
+				const lineTotal = (Number(p.price) || 0) * quantity;
+				if (lineTotal > 0) {
+					return `• ${p.name} (x${quantity}) — $${lineTotal.toFixed(2)}`;
+				}
+				return `• ${p.name} (x${quantity})`;
+			})
 			.join("\n");
+
+		const totalLine = totalAmount > 0 ? `Total: $${totalAmount.toFixed(2)}` : "Total: To be confirmed";
 
 		const waMessage = encodeURIComponent(
 			`Hi! I just placed an order on American Auto Salvage US.\n\n` +
 			`Order #: ${order.orderNumber}\n` +
 			`Items:\n${itemLines}\n\n` +
-			`Total: $${totalAmount.toFixed(2)}\n\n` +
+			`${totalLine}\n\n` +
 			`Ship to: ${shippingDetails.firstName} ${shippingDetails.lastName}, ` +
 			`${shippingDetails.address || shippingDetails.street || ""}, ${shippingDetails.city || ""}, ${shippingDetails.state || ""} ${shippingDetails.zip || ""}\n\n` +
 			`Please confirm my order. Thank you!`

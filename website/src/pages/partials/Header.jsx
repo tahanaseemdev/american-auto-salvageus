@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { BiPhone, BiEnvelope, BiSearch, BiCart, BiMenu, BiX, BiUser, BiLogOut } from 'react-icons/bi';
+import { BiPhone, BiEnvelope, BiSearch, BiMenu, BiX, BiUser, BiLogOut } from 'react-icons/bi';
 import { motion } from 'framer-motion';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import logoImg from '../../assets/american autos.png';
-import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 
 
@@ -20,7 +19,6 @@ export default function Header() {
 	const [scrolled, setScrolled] = useState(false);
 	const [query, setQuery] = useState('');
 	const navigate = useNavigate();
-	const { totalItems } = useCart();
 	const { user, isLoggedIn, logout } = useAuth();
 
 	useEffect(() => {
@@ -109,14 +107,6 @@ export default function Header() {
 							<BiUser size={14} /> Login
 						</Link>
 					)}
-					<Link to="/cart" className="flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 px-4 py-2 rounded text-xs font-black tracking-widest uppercase transition-colors">
-						<BiCart size={15} /> Cart
-						{totalItems > 0 && (
-							<span className="bg-red-600 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
-								{totalItems > 9 ? '9+' : totalItems}
-							</span>
-						)}
-					</Link>
 				</div>
 
 				{/* Hamburger */}
@@ -161,10 +151,6 @@ export default function Header() {
 							Login
 						</Link>
 					)}
-					<Link to="/cart" onClick={() => setMenuOpen(false)}
-						className="py-3 text-xs font-bold tracking-widest uppercase text-neutral-300 hover:text-amber-400 transition-colors">
-						Cart {totalItems > 0 ? `(${totalItems})` : ''}
-					</Link>
 					<form onSubmit={handleSearch} className="flex mt-3 bg-neutral-800 border border-neutral-700 rounded overflow-hidden">
 						<input type="text" value={query} onChange={e => setQuery(e.target.value)}
 							placeholder="Search parts..." className="bg-transparent outline-none text-white text-sm placeholder-neutral-500 px-4 py-3 w-full" />

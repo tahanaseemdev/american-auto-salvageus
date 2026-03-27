@@ -5,8 +5,6 @@ import { useEffect } from "react";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Shop from "./pages/Shop";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
 // import OrderTracking from "./pages/OrderTracking";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -16,8 +14,9 @@ import Dashboard from "./pages/Dashboard";
 import Contact from "./pages/Contact";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Returns from "./pages/Returns";
+import ProductDetail from "./pages/ProductDetail";
+import ProductInquiry from "./pages/ProductInquiry";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { CartProvider } from "./context/CartContext";
 
 function ScrollToTop() {
   const location = useLocation();
@@ -58,8 +57,8 @@ function AppInner() {
         <Route path="/shop/category/:categoryId/subcategory/:subCategoryId/model/:modelId" element={<Shop />} />
         <Route path="/shop/category/:categoryId/subcategory/:subCategoryId/model/:modelId/year/:yearId" element={<Shop />} />
         <Route path="/shop/category/:categoryId/subcategory/:subCategoryId/model/:modelId/year/:yearId/trim/:trimId" element={<Shop />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/product/:productId" element={<ProductDetail />} />
+        <Route path="/product/:productId/call-now" element={<ProductInquiry />} />
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
         {/* <Route path="/tracking" element={<OrderTracking />} /> */}
         <Route path="/login" element={<Login />} />
@@ -78,9 +77,7 @@ function AppInner() {
 function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <AppInner />
-      </CartProvider>
+      <AppInner />
     </AuthProvider>
   );
 }

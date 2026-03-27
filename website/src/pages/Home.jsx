@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { BiSearch, BiCart, BiCheckCircle, BiRightArrowAlt, BiUser, BiPhone, BiMenu, BiX, BiEnvelope, BiAward } from 'react-icons/bi';
+import { BiSearch, BiCheckCircle, BiRightArrowAlt, BiUser, BiPhone, BiMenu, BiX, BiEnvelope, BiAward } from 'react-icons/bi';
 import { FaClipboardCheck, FaTruck } from 'react-icons/fa';
 import { BsFillLightningChargeFill } from 'react-icons/bs';
 import { IoShieldCheckmark } from 'react-icons/io5';
@@ -59,10 +59,10 @@ const CATEGORIES = ['Engines', 'Transmissions', 'Alternators', 'Headlights'];
 const TICKER_ITEMS = ['Engines', 'Transmissions', 'Axles', 'Alternators', 'Headlights', 'Starters', 'Radiators', 'Catalytic Converters', 'Door Panels', 'Control Arms', 'Fuel Pumps', 'CV Shafts'];
 const SEARCH_FIELDS = ['Part', 'Make', 'Model', 'Year', 'Trim'];
 const popularParts = [
-	{ id: 1, title: "1971 Oldsmobile Custom Cruiser AT, RWD, TH350 Transmission", price: "$1,925.00", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
-	{ id: 2, title: "2009 Dodge Durango AT, 4x4, 4.7L Transmission", price: "$1,340.00", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
-	{ id: 3, title: "2009 Suzuki Equator AT, 4.0L 6-cyl, 4x4 Transmission", price: "$1,015.00", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
-	{ id: 4, title: "1998 Volvo 70 Series AT, FWD, turbo, 2.3L Transmission", price: "$1,600.00", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
+	{ id: 1, title: "1971 Oldsmobile Custom Cruiser AT, RWD, TH350 Transmission", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
+	{ id: 2, title: "2009 Dodge Durango AT, 4x4, 4.7L Transmission", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
+	{ id: 3, title: "2009 Suzuki Equator AT, 4.0L 6-cyl, 4x4 Transmission", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
+	{ id: 4, title: "1998 Volvo 70 Series AT, FWD, turbo, 2.3L Transmission", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
 ];
 const promos = [
 	{ id: 1, eyebrow: "Big Sale", title: "Used Engines", badge: "Save 25%", img: "https://allusedautoparts.world/images/promo/promo1.jpg" },
@@ -110,7 +110,7 @@ const benefits = [
 	{ icon: FaTruck, title: "Fast Shipping", sub: "Nationwide delivery" },
 	{ icon: IoShieldCheckmark, title: "90-Day Warranty", sub: "On eligible parts" },
 	{ icon: FaClipboardCheck, title: "Quality Tested", sub: "OEM used parts" },
-	{ icon: BiCreditCard, title: "Secure Checkout", sub: "SSL / PCI" },
+	{ icon: BiCreditCard, title: "WhatsApp Ordering", sub: "Fast confirmation" },
 ];
 
 /* ════════════════════════════════
@@ -413,11 +413,19 @@ export default function Home() {
 		? featuredProducts.map((part) => ({
 			id: part._id,
 			title: part.name,
-			price: `$${Number(part.price || 0).toFixed(2)}`,
 			img: part.image ? resolveImageUrl(part.image) : 'https://allusedautoparts.world/aaps-img/transmission.jpg',
 			tag: part.category?.title || 'Featured',
+			rawProduct: part,
 		}))
 		: popularParts;
+
+	const onViewDetails = (part) => {
+		if (!part?.rawProduct?._id) {
+			navigate('/shop');
+			return;
+		}
+		navigate(`/product/${part.rawProduct._id}`);
+	};
 
 	const displayedPartsGrid = featuredCategories.length
 		? featuredCategories.map((category) => ({
@@ -580,13 +588,13 @@ export default function Home() {
 											{part.tag} · Mileage Tiers
 										</span>
 										<h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-4 grow">{part.title}</h3>
-										<div className="flex items-center justify-between mt-auto">
-											<span className="font-['Barlow_Condensed',sans-serif] font-black text-2xl text-neutral-900">{part.price}</span>
+										<div className="flex items-center justify-end mt-auto">
 											<motion.button
+												onClick={() => onViewDetails(part)}
 												whileHover={{ backgroundColor: '#F59E0B', color: '#171717' }}
 												whileTap={{ scale: 0.95 }}
 												className="flex items-center gap-2 bg-neutral-900 text-white text-[11px] font-black tracking-widest uppercase px-4 py-2 rounded-lg transition-colors duration-200">
-												<BiCart size={15} /> Buy
+												View Details
 											</motion.button>
 										</div>
 									</div>
