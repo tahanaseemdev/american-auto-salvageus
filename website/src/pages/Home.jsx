@@ -500,7 +500,7 @@ export default function Home() {
 										<BiSearch size={18} /> Search
 									</motion.button>
 								</div>
-								<div className="mt-4 flex flex-wrap items-center gap-2">
+								{/* <div className="mt-4 flex flex-wrap items-center gap-2">
 									<span className="font-semibold text-xs tracking-widest uppercase text-neutral-400">Popular:</span>
 									{['1997 Acura CL Engine', '2009 Dodge Durango Trans', '2005 Toyota Sienna V6'].map(q => (
 										<motion.button key={q} whileHover={{ scale: 1.03 }}
@@ -508,7 +508,7 @@ export default function Home() {
 											{q}
 										</motion.button>
 									))}
-								</div>
+								</div> */}
 							</div>
 						</Reveal>
 					</div>
