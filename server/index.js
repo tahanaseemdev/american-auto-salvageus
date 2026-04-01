@@ -48,6 +48,7 @@ app.use(cors(corsOptions));
 mongoose
 	.connect(process.env.MONGO_DB_CONNECTION_URL)
 	.then(() => {
+		console.log("Connecting to:", process.env.MONGO_DB_CONNECTION_URL);
 		console.info(`Database connected successfully`);
 	})
 	.catch((err) => {
