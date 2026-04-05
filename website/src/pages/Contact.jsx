@@ -276,7 +276,7 @@ export default function Contact() {
                     { icon: <FaTwitter size={18} />, label: 'Twitter', color: 'text-sky-500 hover:bg-sky-50 hover:border-sky-200' },
                     { icon: <FaYoutube size={18} />, label: 'YouTube', color: 'text-red-500 hover:bg-red-50 hover:border-red-200' },
                   ].map(s => (
-                    <motion.a key={s.label} href="#" whileHover={{ scale: 1.1 }}
+                    <motion.a key={s.label} href="/contact" whileHover={{ scale: 1.1 }}
                       className={`w-10 h-10 rounded-xl border border-neutral-200 flex items-center justify-center transition-all ${s.color}`}
                       aria-label={s.label}>
                       {s.icon}

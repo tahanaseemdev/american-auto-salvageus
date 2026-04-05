@@ -215,7 +215,7 @@ export default function About() {
       </section>
 
       {/* ── Team ── */}
-      <section className="bg-white py-20">
+      {/* <section className="bg-white py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <Reveal className="text-center mb-14">
             <span className="font-['Barlow_Condensed',sans-serif] font-bold text-xs tracking-[0.18em] uppercase text-amber-500 mb-3 block">
@@ -251,7 +251,7 @@ export default function About() {
             ))}
           </motion.div>
         </div>
-      </section>
+      </section> */}
 
       {/* ── Accolades ── */}
       <section className="bg-neutral-100 py-14">

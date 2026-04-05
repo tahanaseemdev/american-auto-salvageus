@@ -28,10 +28,10 @@ const contactItems = [
 ];
 
 const socials = [
-	{ icon: FaFacebookF, href: '#', label: 'Facebook' },
-	{ icon: FaInstagram, href: '#', label: 'Instagram' },
-	{ icon: FaXTwitter, href: '#', label: 'X / Twitter' },
-	{ icon: FaYoutube, href: '#', label: 'YouTube' },
+	{ icon: FaFacebookF, href: '/contact', label: 'Facebook' },
+	{ icon: FaInstagram, href: '/contact', label: 'Instagram' },
+	{ icon: FaXTwitter, href: '/contact', label: 'X / Twitter' },
+	{ icon: FaYoutube, href: '/contact', label: 'YouTube' },
 ];
 
 export default function Footer() {
@@ -55,7 +55,7 @@ export default function Footer() {
 							<span className="text-amber-400">We'll source it for you.</span>
 						</p>
 						<Link to="/contact"
-							className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 font-black text-[11px] tracking-widest uppercase px-5 py-3 rounded-lg transition-colors flex-shrink-0">
+							className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 font-black text-[11px] tracking-widest uppercase px-5 py-3 rounded-lg transition-colors shrink-0">
 							Talk to a Specialist <BiRightArrowAlt size={16} />
 						</Link>
 					</div>
@@ -72,7 +72,7 @@ export default function Footer() {
 								<img
 									src={logoImg}
 									alt="American Auto Salvageus"
-									className="h-8 sm:h-9 md:h-10 w-auto max-w-[160px] sm:max-w-[200px] object-contain object-left"
+									className="h-8 sm:h-9 md:h-10 w-auto max-w-40 sm:max-w-[200px] object-contain object-left"
 								/>
 							</Link>
 
@@ -134,14 +134,14 @@ export default function Footer() {
 										{href ? (
 											<a href={href}
 												className="flex items-start gap-3 text-sm text-neutral-500 hover:text-amber-400 transition-colors group">
-												<div className="w-7 h-7 rounded-lg bg-neutral-800 group-hover:bg-amber-400/10 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors">
+												<div className="w-7 h-7 rounded-lg bg-neutral-800 group-hover:bg-amber-400/10 flex items-center justify-center shrink-0 mt-0.5 transition-colors">
 													<Icon className="text-amber-400" size={14} />
 												</div>
 												{text}
 											</a>
 										) : (
 											<div className="flex items-start gap-3 text-sm text-neutral-500">
-												<div className="w-7 h-7 rounded-lg bg-neutral-800 flex items-center justify-center flex-shrink-0 mt-0.5">
+												<div className="w-7 h-7 rounded-lg bg-neutral-800 flex items-center justify-center shrink-0 mt-0.5">
 													<Icon className="text-amber-400" size={14} />
 												</div>
 												{text}

@@ -181,11 +181,11 @@ function Hero() {
 						</motion.div>
 
 						<motion.div variants={staggerItem} className="flex flex-wrap gap-4 mb-12">
-							<motion.a href="#" whileHover={{ y: -2, boxShadow: '0 10px 30px rgba(245,158,11,0.3)' }} whileTap={{ scale: 0.97 }}
+							<motion.a href="/shop" whileHover={{ y: -2, boxShadow: '0 10px 30px rgba(245,158,11,0.3)' }} whileTap={{ scale: 0.97 }}
 								className="inline-flex items-center gap-2.5 bg-amber-400 hover:bg-amber-500 text-neutral-900 font-black text-[13px] tracking-widest uppercase px-7 py-3.5 rounded transition-colors">
 								Browse Parts <BiRightArrowAlt size={20} />
 							</motion.a>
-							<motion.a href="#" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
+							<motion.a href="/contact" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
 								className="inline-flex items-center gap-2.5 border border-neutral-600 hover:border-amber-400/60 text-neutral-300 hover:text-amber-400 font-bold text-[13px] tracking-widest uppercase px-7 py-3.5 rounded transition-all">
 								Talk to an Expert
 							</motion.a>
@@ -503,7 +503,7 @@ export default function Home() {
 					<motion.div className="grid grid-cols-1 lg:grid-cols-3 gap-5"
 						initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} variants={stagger}>
 						{promos.map(promo => (
-							<motion.a key={promo.id} href="#" variants={staggerItem}
+							<motion.a key={promo.id} href="/shop" variants={staggerItem}
 								className="relative block rounded-2xl overflow-hidden min-h-[220px] group cursor-pointer"
 								whileHover={{ y: -5 }} transition={{ duration: 0.25 }}>
 								<motion.img src={promo.img} alt={promo.title}
@@ -526,7 +526,7 @@ export default function Home() {
 						<div className="flex items-end justify-between mb-8">
 							<SectionLabel eyebrow="Mileage-Tier Pricing" heading="Popular Parts" />
 							<Reveal>
-								<a href="#" className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-neutral-500 hover:text-amber-500 border border-neutral-300 hover:border-amber-400 px-4 py-2 rounded-full transition-all">
+								<a href="/shop" className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-neutral-500 hover:text-amber-500 border border-neutral-300 hover:border-amber-400 px-4 py-2 rounded-full transition-all">
 									View All <BiRightArrowAlt size={16} />
 								</a>
 							</Reveal>
@@ -669,7 +669,7 @@ export default function Home() {
 									</motion.li>
 								))}
 							</motion.ul>
-							<motion.a href="#"
+							<motion.a href="/shop"
 								whileHover={{ y: -2, backgroundColor: '#F59E0B', color: '#171717' }} whileTap={{ scale: 0.97 }}
 								className="inline-flex items-center gap-2 bg-neutral-900 text-white font-black text-[12px] tracking-widest uppercase px-6 py-3.5 rounded-xl transition-colors duration-200">
 								Read the Guides <BiRightArrowAlt size={18} />
@@ -684,7 +684,7 @@ export default function Home() {
 						<div className="flex items-end justify-between mb-8">
 							<SectionLabel eyebrow="Full Catalog" heading="Parts We Carry" />
 							<Reveal>
-								<a href="#" className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-neutral-500 hover:text-amber-500 border border-neutral-300 hover:border-amber-400 px-4 py-2 rounded-full transition-all">
+								<a href="/shop" className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-neutral-500 hover:text-amber-500 border border-neutral-300 hover:border-amber-400 px-4 py-2 rounded-full transition-all">
 									Browse All <BiRightArrowAlt size={16} />
 								</a>
 							</Reveal>
@@ -699,7 +699,7 @@ export default function Home() {
 										<motion.img src={cat.img} alt={cat.title} className="max-h-full object-contain"
 											whileHover={{ scale: 1.12 }} transition={{ duration: 0.3 }} />
 									</div>
-									<a href={cat.href || '#'} className="block py-3 px-2 font-bold text-neutral-700 text-xs tracking-wide truncate group-hover:text-amber-500 transition-colors">
+									<a href={cat.href || '/shop'} className="block py-3 px-2 font-bold text-neutral-700 text-xs tracking-wide truncate group-hover:text-amber-500 transition-colors">
 										{cat.title}
 									</a>
 								</motion.div>
@@ -763,11 +763,11 @@ export default function Home() {
 								<p className="text-neutral-700 font-medium mt-2">Talk to a parts specialist — we'll source it for you.</p>
 							</div>
 							<div className="flex gap-4 flex-wrap">
-								<motion.a href="#" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
+								<motion.a href="/contact" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
 									className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white font-black text-[12px] tracking-widest uppercase px-7 py-4 rounded-xl transition-colors">
 									Contact Us <BiRightArrowAlt size={18} />
 								</motion.a>
-								<motion.a href="#" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
+								<motion.a href="tel:+1-866-206-9163" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
 									className="inline-flex items-center gap-2 bg-white/50 hover:bg-white text-neutral-900 font-black text-[12px] tracking-widest uppercase px-7 py-4 rounded-xl transition-all border border-neutral-900/10">
 									Call Now
 								</motion.a>

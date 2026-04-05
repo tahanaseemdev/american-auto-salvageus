@@ -207,8 +207,8 @@ export default function Register() {
                     <input type="checkbox" checked={form.terms} onChange={e => update('terms', e.target.checked)}
                       className="mt-0.5 accent-amber-400 w-4 h-4 shrink-0" />
                     I agree to the{' '}
-                    <a href="#" className="text-amber-500 hover:underline font-semibold">Terms of Service</a> and{' '}
-                    <a href="#" className="text-amber-500 hover:underline font-semibold">Privacy Policy</a>. <span className="text-amber-500">*</span>
+                    <Link to="/returns" className="text-amber-500 hover:underline font-semibold">Terms of Service</Link> and{' '}
+                    <Link to="/privacy" className="text-amber-500 hover:underline font-semibold">Privacy Policy</Link>. <span className="text-amber-500">*</span>
                   </label>
                   {errors.terms && <p className="text-red-500 text-xs font-semibold">{errors.terms}</p>}
                   <label className="flex items-center gap-2 cursor-pointer text-sm text-neutral-500 font-medium">
