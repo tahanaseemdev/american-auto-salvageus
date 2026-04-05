@@ -7,6 +7,8 @@ import { HiSparkles } from 'react-icons/hi';
 import api from '../utils/api';
 import { resolveImageUrl } from '../utils/image';
 
+const PART_LEVEL_PAGE_SIZE = 24;
+
 const fadeUp = {
 	hidden: { opacity: 0, y: 28 },
 	visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
@@ -240,6 +242,7 @@ export default function Shop() {
 	const [searchProducts, setSearchProducts] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
+	const [productPage, setProductPage] = useState(1);
 
 	const hasStructuredFilters = Boolean(partFilter || makeFilter || modelFilter || yearFilter || trimFilter);
 
@@ -254,6 +257,26 @@ export default function Shop() {
 	const activeModel = models.find((item) => item._id === modelId) || null;
 	const activeYear = years.find((item) => item._id === yearId) || null;
 	const activeTrim = trims.find((item) => item._id === trimId) || null;
+
+	const isPartOnlySelection = Boolean(activePartId && !activeMakeId && !modelId && !yearId && !trimId && !searchQuery && !hasStructuredFilters);
+	const productTotalPages = isPartOnlySelection
+		? Math.max(1, Math.ceil(partProducts.length / PART_LEVEL_PAGE_SIZE))
+		: 1;
+	const paginatedPartProducts = useMemo(() => {
+		if (!isPartOnlySelection) return partProducts;
+		const start = (productPage - 1) * PART_LEVEL_PAGE_SIZE;
+		return partProducts.slice(start, start + PART_LEVEL_PAGE_SIZE);
+	}, [isPartOnlySelection, partProducts, productPage]);
+
+	useEffect(() => {
+		setProductPage(1);
+	}, [activePartId, activeMakeId, modelId, yearId, trimId, searchQuery, hasStructuredFilters]);
+
+	useEffect(() => {
+		if (productPage > productTotalPages) {
+			setProductPage(productTotalPages);
+		}
+	}, [productPage, productTotalPages]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -595,7 +618,35 @@ export default function Shop() {
 										</Link>
 									)}
 								</div>
-								<ProductGrid products={partProducts} />
+								<ProductGrid products={paginatedPartProducts} />
+								{isPartOnlySelection && partProducts.length > PART_LEVEL_PAGE_SIZE && (
+									<div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+										<p className="text-xs font-semibold text-neutral-500 mb-0">
+											Showing {(productPage - 1) * PART_LEVEL_PAGE_SIZE + 1}-{Math.min(productPage * PART_LEVEL_PAGE_SIZE, partProducts.length)} of {partProducts.length}
+										</p>
+										<div className="flex items-center gap-2">
+											<button
+												type="button"
+												onClick={() => setProductPage((prev) => Math.max(1, prev - 1))}
+												disabled={productPage === 1}
+												className="px-3 py-1.5 rounded-lg border border-neutral-300 text-[11px] font-black tracking-widest uppercase text-neutral-700 hover:border-amber-400 hover:text-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+											>
+												Prev
+											</button>
+											<span className="text-xs font-bold text-neutral-500 min-w-16 text-center">
+												{productPage} / {productTotalPages}
+											</span>
+											<button
+												type="button"
+												onClick={() => setProductPage((prev) => Math.min(productTotalPages, prev + 1))}
+												disabled={productPage === productTotalPages}
+												className="px-3 py-1.5 rounded-lg border border-neutral-300 text-[11px] font-black tracking-widest uppercase text-neutral-700 hover:border-amber-400 hover:text-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+											>
+												Next
+											</button>
+										</div>
+									</div>
+								)}
 							</div>
 						</div>
 					)}
