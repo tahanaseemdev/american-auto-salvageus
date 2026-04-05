@@ -54,8 +54,8 @@ export default function Checkout() {
   // Normalise cart items to the payload shape the API expects
   const orderProducts = items.map(item => ({
     product: isMongoObjectId(item.product?._id || item.product?.id || item.id)
-    ? (item.product?._id || item.product?.id || item.id)
-    : undefined,
+      ? (item.product?._id || item.product?.id || item.id)
+      : undefined,
     name: item.product?.name || item.name || '',
     sku: item.product?.sku || item.sku || '',
     price: item.product?.price || item.price || 0,
