@@ -103,7 +103,7 @@ export default function OrdersPage() {
 		<section>
 			<div className="d-flex justify-content-between align-items-center mb-3">
 				<div>
-					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Orders <span className="admin-count-badge">{orders.length}</span></h2>
+					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Orders</h2>
 					<p className="admin-subtle-text mb-0">View and manage all customer orders.</p>
 				</div>
 			</div>

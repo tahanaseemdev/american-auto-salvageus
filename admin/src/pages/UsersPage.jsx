@@ -44,7 +44,7 @@ export default function UsersPage() {
 		<section>
 			<div className="d-flex align-items-center mb-3">
 				<div>
-					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Customers <span className="admin-count-badge">{users.length}</span></h2>
+					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Customers</h2>
 					<p className="admin-subtle-text mb-0">Only customers are shown here. Sub-admins are managed in Permissions page.</p>
 				</div>
 			</div>

@@ -118,7 +118,7 @@ export default function ModelsPage() {
 		<section>
 			<div className="d-flex justify-content-between align-items-center mb-3">
 				<div>
-					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Models <span className="admin-count-badge">{items.length}</span></h2>
+					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Models</h2>
 					<p className="admin-subtle-text mb-0">Manage vehicle model titles used in product setup.</p>
 				</div>
 				{canEdit && <Button className="admin-cta-btn" onClick={openAddModal}>Add Model</Button>}

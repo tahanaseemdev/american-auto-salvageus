@@ -118,7 +118,7 @@ export default function YearsPage() {
 		<section>
 			<div className="d-flex justify-content-between align-items-center mb-3">
 				<div>
-					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Years <span className="admin-count-badge">{items.length}</span></h2>
+					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Years</h2>
 					<p className="admin-subtle-text mb-0">Manage year titles used in product setup.</p>
 				</div>
 				{canEdit && <Button className="admin-cta-btn" onClick={openAddModal}>Add Year</Button>}

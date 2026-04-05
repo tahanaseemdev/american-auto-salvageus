@@ -45,6 +45,8 @@ export default function ProductInquiry() {
 
 	const fullName = useMemo(() => `${form.firstName} ${form.lastName}`.trim(), [form.firstName, form.lastName]);
 
+	const isMongoObjectId = (value) => typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
+
 	useEffect(() => {
 		let cancelled = false;
 
@@ -90,7 +92,7 @@ export default function ProductInquiry() {
 			const { data } = await api.post('/orders', {
 				products: [
 					{
-						product: product._id,
+						product: isMongoObjectId(product._id) ? product._id : undefined,
 						name: product.name,
 						sku: product.sku || '',
 						price: 0,

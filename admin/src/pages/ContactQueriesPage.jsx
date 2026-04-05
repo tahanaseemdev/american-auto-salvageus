@@ -75,7 +75,7 @@ export default function ContactQueriesPage() {
 			<div className="d-flex justify-content-between align-items-center mb-3">
 				<div>
 					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">
-						Contact Queries <span className="admin-count-badge">{queries.length}</span>
+						Contact Queries
 					</h2>
 					<p className="admin-subtle-text mb-0">Messages submitted through the website contact form.</p>
 				</div>

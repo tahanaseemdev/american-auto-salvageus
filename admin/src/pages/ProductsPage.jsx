@@ -258,7 +258,7 @@ export default function ProductsPage() {
 		<section>
 			<div className="d-flex justify-content-between align-items-center mb-3">
 				<div>
-					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Products <span className="admin-count-badge">{products.length}</span></h2>
+					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Products</h2>
 					<p className="admin-subtle-text mb-0">Add and monitor products with Part, Make, Model, Year, and Trim mapping.</p>
 				</div>
 				{canEditProducts && <Button className="admin-cta-btn" onClick={openAddModal}>Add Product</Button>}

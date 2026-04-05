@@ -35,6 +35,10 @@ function InputField({ label, type = 'text', placeholder, hint, required = false,
 
 const EMPTY_SHIPPING = { firstName: '', lastName: '', email: '', phone: '', street: '', apartment: '', city: '', state: '', zip: '', notes: '' };
 
+function isMongoObjectId(value) {
+  return typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
+}
+
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart();
   const [step, setStep] = useState(1);
@@ -49,7 +53,9 @@ export default function Checkout() {
 
   // Normalise cart items to the payload shape the API expects
   const orderProducts = items.map(item => ({
-    product: item.product?._id || item.product?.id || item.id,
+    product: isMongoObjectId(item.product?._id || item.product?.id || item.id)
+    ? (item.product?._id || item.product?.id || item.id)
+    : undefined,
     name: item.product?.name || item.name || '',
     sku: item.product?.sku || item.sku || '',
     price: item.product?.price || item.price || 0,

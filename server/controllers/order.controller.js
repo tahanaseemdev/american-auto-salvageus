@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Order = require("../models/Order");
 const User = require("../models/User");
 const { sendJsonResponse } = require("../utils/helpers");
@@ -8,6 +9,18 @@ function buildOrderNumber() {
 	const ts = Date.now().toString().slice(-8);
 	const rand = Math.floor(1000 + Math.random() * 9000);
 	return `AAS-${ts}${rand}`;
+}
+
+function sanitizeOrderProducts(products) {
+	return (products || []).map((item) => {
+		const productId = mongoose.isValidObjectId(item?.product) ? String(item.product) : undefined;
+		return {
+			...(productId ? { product: productId } : {}),
+			name: String(item?.name || "").trim(),
+			price: Number(item?.price) || 0,
+			quantity: Math.max(1, Number(item?.quantity) || 1),
+		};
+	});
 }
 
 async function createOrder(req, res, next) {
@@ -21,12 +34,17 @@ async function createOrder(req, res, next) {
 			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Shipping details are required.");
 		}
 
+		const safeProducts = sanitizeOrderProducts(products).filter((item) => item.name);
+		if (!safeProducts.length) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Order must contain at least one valid product.");
+		}
+
 		const totalAmount = Number(subtotal) + Number(shipping);
 
 		const order = await Order.create({
 			user: req.user?._id || null,
 			orderNumber: buildOrderNumber(),
-			products,
+			products: safeProducts,
 			subtotal: Number(subtotal),
 			shipping: Number(shipping),
 			totalAmount,
@@ -40,7 +58,7 @@ async function createOrder(req, res, next) {
 		}
 
 		// Build the WhatsApp message
-		const itemLines = products
+		const itemLines = safeProducts
 			.map((p) => {
 				const quantity = Number(p.quantity) || 1;
 				const lineTotal = (Number(p.price) || 0) * quantity;

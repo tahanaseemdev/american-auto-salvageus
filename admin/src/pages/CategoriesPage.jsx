@@ -143,7 +143,7 @@ export default function CategoriesPage() {
 		<section>
 			<div className="d-flex justify-content-between align-items-center mb-3">
 				<div>
-					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Parts <span className="admin-count-badge">{categories.length}</span></h2>
+					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Parts</h2>
 					<p className="admin-subtle-text mb-0">Dashboard . Parts</p>
 				</div>
 				{canEditCategories && <Button className="admin-cta-btn" onClick={openAddModal}>Add Part</Button>}

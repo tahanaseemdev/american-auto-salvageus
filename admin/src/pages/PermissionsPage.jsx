@@ -205,7 +205,7 @@ export default function PermissionsPage() {
 		<section>
 			<div className="d-flex justify-content-between align-items-center mb-3">
 				<div>
-					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Roles & Permissions <span className="admin-count-badge">{roles.length}</span></h2>
+					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Roles & Permissions</h2>
 					<p className="admin-subtle-text mb-0">Create roles and assign granular permissions to control admin access.</p>
 				</div>
 				<div className="d-flex align-items-center gap-2">
@@ -237,7 +237,7 @@ export default function PermissionsPage() {
 			{canManageUsers && <>
 				<div className="d-flex align-items-center mb-3 mt-4">
 					<div>
-						<h3 className="h4 fw-bold mb-1 d-flex align-items-center gap-2">Sub Admins <span className="admin-count-badge">{subAdmins.length}</span></h3>
+						<h3 className="h4 fw-bold mb-1 d-flex align-items-center gap-2">Sub Admins</h3>
 						<p className="admin-subtle-text mb-0">Sub-admin accounts with assigned roles are shown here.</p>
 					</div>
 				</div>
