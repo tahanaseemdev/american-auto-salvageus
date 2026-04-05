@@ -59,7 +59,7 @@ export default function UsersPage() {
 					rows={7}
 					globalFilter={globalFilter}
 					globalFilterFields={["name", "email"]}
-					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+					paginatorTemplate="PrevPageLink NextPageLink"
 					emptyMessage="No customers found."
 				>
 					<Column header="No" body={numberBody} style={{ width: "80px" }} />
@@ -73,3 +73,5 @@ export default function UsersPage() {
 		</section>
 	);
 }
+
+

@@ -165,12 +165,18 @@ function ProductGrid({ products }) {
 						<h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-2 flex-1">{product.name}</h3>
 
 						<div className="flex items-end justify-end mt-auto pt-3 border-t border-neutral-100">
-							<Link
-								to={`/product/${product._id}`}
-								className="flex items-center gap-1.5 text-[11px] font-black tracking-widest uppercase px-4 py-2 rounded-lg transition-all bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white"
-							>
-								View Details
-							</Link>
+							{product.synthetic ? (
+								<span className="flex items-center gap-1.5 text-[11px] font-black tracking-widest uppercase px-4 py-2 rounded-lg bg-amber-100 text-amber-700">
+									Fitment Match
+								</span>
+							) : (
+								<Link
+									to={`/product/${product._id}`}
+									className="flex items-center gap-1.5 text-[11px] font-black tracking-widest uppercase px-4 py-2 rounded-lg transition-all bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white"
+								>
+									View Details
+								</Link>
+							)}
 						</div>
 					</div>
 				</MotionDiv>
@@ -259,19 +265,27 @@ export default function Shop() {
 				}
 
 				if (hasStructuredFilters) {
+					if (!partFilter) {
+						if (!cancelled) {
+							setSearchProducts([]);
+							setCategories([]);
+							setCategoryDetail(null);
+						}
+						return;
+					}
+
 					const params = new URLSearchParams();
-					params.set('limit', '100');
-					if (partFilter) params.set('category', partFilter);
-					if (makeFilter) params.set('subCategory', makeFilter);
+					if (makeFilter) params.set('make', makeFilter);
 					if (modelFilter) params.set('model', modelFilter);
 					if (yearFilter) params.set('year', yearFilter);
 					if (trimFilter) params.set('trim', trimFilter);
 
-					const { data } = await api.get(`/products?${params.toString()}`);
+					const url = params.toString() ? `/categories/${partFilter}?${params.toString()}` : `/categories/${partFilter}`;
+					const { data } = await api.get(url);
 					if (!cancelled) {
-						setSearchProducts(data?.data?.products || []);
+						setCategoryDetail(data?.data || null);
+						setSearchProducts([]);
 						setCategories([]);
-						setCategoryDetail(null);
 					}
 					return;
 				}
@@ -482,7 +496,7 @@ export default function Shop() {
 						<div className="bg-red-50 border border-red-200 text-red-600 rounded-2xl p-5 text-sm font-semibold">
 							{error}
 						</div>
-					) : (searchQuery || hasStructuredFilters) ? (
+					) : searchQuery ? (
 						<div className="space-y-4">
 							<div className="flex items-center justify-between">
 								<h2 className="font-['Barlow_Condensed',sans-serif] font-black text-3xl uppercase text-neutral-900">
@@ -496,6 +510,21 @@ export default function Shop() {
 								</Link>
 							</div>
 							<ProductGrid products={searchProducts} />
+						</div>
+					) : hasStructuredFilters ? (
+						<div className="space-y-4">
+							<div className="flex items-center justify-between">
+								<h2 className="font-['Barlow_Condensed',sans-serif] font-black text-3xl uppercase text-neutral-900">
+									Matching Products
+								</h2>
+								<Link
+									to="/shop"
+									className="text-[11px] font-black tracking-widest uppercase text-neutral-500 hover:text-amber-500 transition-colors"
+								>
+									Clear Filters
+								</Link>
+							</div>
+							<ProductGrid products={categoryProducts} />
 						</div>
 					) : !categoryId ? (
 						<MotionDiv

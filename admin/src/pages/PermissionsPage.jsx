@@ -224,7 +224,7 @@ export default function PermissionsPage() {
 					rows={7}
 					globalFilter={globalFilter}
 					globalFilterFields={["title"]}
-					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+					paginatorTemplate="PrevPageLink NextPageLink"
 					emptyMessage="No roles found."
 				>
 					<Column header="No" body={numberBody} style={{ width: "80px" }} />
@@ -252,7 +252,7 @@ export default function PermissionsPage() {
 						rows={7}
 						globalFilter={subAdminsFilter}
 						globalFilterFields={["name", "email", "role.title"]}
-						paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+						paginatorTemplate="PrevPageLink NextPageLink"
 						emptyMessage="No sub admins found."
 					>
 						<Column header="No" body={subAdminsNumberBody} style={{ width: "80px" }} />
@@ -339,3 +339,5 @@ export default function PermissionsPage() {
 		</section>
 	);
 }
+
+

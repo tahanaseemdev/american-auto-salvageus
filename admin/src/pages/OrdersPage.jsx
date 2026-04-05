@@ -118,7 +118,7 @@ export default function OrdersPage() {
 					rows={10}
 					globalFilter={globalFilter}
 					globalFilterFields={["orderNumber", "status"]}
-					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+					paginatorTemplate="PrevPageLink NextPageLink"
 					emptyMessage="No orders found."
 					sortField="createdAt"
 					sortOrder={-1}
@@ -195,3 +195,5 @@ export default function OrdersPage() {
 		</section>
 	);
 }
+
+

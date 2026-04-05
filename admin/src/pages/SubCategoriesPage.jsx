@@ -128,7 +128,7 @@ export default function SubCategoriesPage() {
 					rows={7}
 					globalFilter={globalFilter}
 					globalFilterFields={["name"]}
-					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+					paginatorTemplate="PrevPageLink NextPageLink"
 					emptyMessage="No sub categories found."
 				>
 					<Column header="No" body={numberBody} style={{ width: "80px" }} />
@@ -158,3 +158,5 @@ export default function SubCategoriesPage() {
 		</section>
 	);
 }
+
+

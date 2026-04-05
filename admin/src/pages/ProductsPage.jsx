@@ -274,7 +274,7 @@ export default function ProductsPage() {
 					rows={7}
 					globalFilter={globalFilter}
 					globalFilterFields={["name", "model.title", "trim.title", "year.title", "category.title", "subCategory.name"]}
-					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+					paginatorTemplate="PrevPageLink NextPageLink"
 					emptyMessage="No products found."
 				>
 					<Column header="No" body={numberBody} style={{ width: "80px" }} />
@@ -373,3 +373,5 @@ export default function ProductsPage() {
 		</section>
 	);
 }
+
+

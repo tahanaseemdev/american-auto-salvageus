@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const VehicleModel = require("../models/VehicleModel");
 const VehicleYear = require("../models/VehicleYear");
 const VehicleTrim = require("../models/VehicleTrim");
+const VehiclePart = require("../models/VehiclePart");
+const VehicleMake = require("../models/VehicleMake");
 const { sendJsonResponse } = require("../utils/helpers");
 
 function normalizeObjectIdValue(value) {
@@ -159,5 +161,81 @@ const trims = buildCrudHandlers(VehicleTrim, {
 	filterQueryKeys: ["year"],
 	populate: [{ path: "year", select: "title model" }],
 });
+
+async function fetchLiveTrimsBySelection({ partTitle, makeName, modelTitle, yearTitle }) {
+	if (!partTitle || !makeName || !modelTitle || !yearTitle) return [];
+
+	const url = new URL("https://allusedautoparts.world/api/ymm_options.php");
+	url.searchParams.set("level", "trim");
+	url.searchParams.set("part", partTitle);
+	url.searchParams.set("make", makeName);
+	url.searchParams.set("model", modelTitle);
+	url.searchParams.set("year", yearTitle);
+
+	try {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 8000);
+		const response = await fetch(url.toString(), {
+			headers: { Accept: "application/json" },
+			signal: controller.signal,
+		});
+		clearTimeout(timeoutId);
+		if (!response.ok) return [];
+
+		const payload = await response.json();
+		if (!Array.isArray(payload?.values)) return [];
+
+		return payload.values
+			.map((value) => String(value || "").trim())
+			.filter(Boolean)
+			.map((title, index) => ({
+				_id: `${partTitle}-${makeName}-${modelTitle}-${yearTitle}-${index}`.toLowerCase().replace(/\s+/g, "-"),
+				title,
+				year: null,
+			}));
+	} catch {
+		return [];
+	}
+}
+
+const defaultTrimsGetAll = trims.getAll;
+trims.getAll = async (req, res, next) => {
+	try {
+		const partId = normalizeObjectIdValue(req.query?.part || req.query?.category);
+		const makeId = normalizeObjectIdValue(req.query?.make || req.query?.subCategory);
+		const modelId = normalizeObjectIdValue(req.query?.model);
+		const yearId = normalizeObjectIdValue(req.query?.year);
+
+		if (partId === false || makeId === false || modelId === false || yearId === false) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid part/make/model/year id.");
+		}
+
+		if (partId && makeId && modelId && yearId) {
+			const [part, make, model, year] = await Promise.all([
+				VehiclePart.findById(partId).select("title").lean(),
+				VehicleMake.findById(makeId).select("name").lean(),
+				VehicleModel.findById(modelId).select("title").lean(),
+				VehicleYear.findById(yearId).select("title").lean(),
+			]);
+
+			if (part && make && model && year) {
+				const liveTrims = await fetchLiveTrimsBySelection({
+					partTitle: part.title,
+					makeName: make.name,
+					modelTitle: model.title,
+					yearTitle: year.title,
+				});
+
+				if (liveTrims.length > 0) {
+					return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Trims fetched.", liveTrims);
+				}
+			}
+		}
+
+		return defaultTrimsGetAll(req, res, next);
+	} catch (err) {
+		next(err);
+	}
+};
 
 module.exports = { models, years, trims };

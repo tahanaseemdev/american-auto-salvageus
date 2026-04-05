@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { BiCategoryAlt, BiPackage, BiSolidUser, BiUserPin } from "react-icons/bi";
+import { BiEnvelope, BiReceipt, BiSolidUser, BiUserPin } from "react-icons/bi";
 import api from "../utils/api";
 
 export default function DashboardPage() {
 	const [stats, setStats] = useState({
 		customers: 0,
-		products: 0,
-		categories: 0,
+		orders: 0,
+		contactQueries: 0,
 		subAdmins: 0,
 	});
 
@@ -16,19 +16,19 @@ export default function DashboardPage() {
 
 	const fetchDashboardStats = async () => {
 		try {
-			const [usersRes, productsRes, categoriesRes] = await Promise.all([
+			const [usersRes, ordersRes, contactQueriesRes] = await Promise.all([
 				api.get("/admin/users?limit=1000"),
-				api.get("/products/admin/all?limit=1"),
-				api.get("/categories/admin/all"),
+				api.get("/admin/orders?limit=1"),
+				api.get("/admin/contact-queries?limit=1"),
 			]);
 
 			const users = usersRes.data.data?.users || [];
 			const customers = users.filter((user) => !user.role).length;
 			const subAdmins = users.filter((user) => user.role && user.role.title !== "Super Admin").length;
-			const products = productsRes.data.data?.pagination?.total || 0;
-			const categories = Array.isArray(categoriesRes.data.data) ? categoriesRes.data.data.length : 0;
+			const orders = ordersRes.data.data?.pagination?.total || 0;
+			const contactQueries = contactQueriesRes.data.data?.pagination?.total || 0;
 
-			setStats({ customers, products, categories, subAdmins });
+			setStats({ customers, orders, contactQueries, subAdmins });
 		} catch {
 			// ignore fetch errors and keep defaults
 		}
@@ -36,8 +36,8 @@ export default function DashboardPage() {
 
 	const statCards = [
 		{ label: "Users", value: stats.customers, icon: BiSolidUser },
-		{ label: "Products", value: stats.products, icon: BiPackage },
-		{ label: "Categories", value: stats.categories, icon: BiCategoryAlt },
+		{ label: "Orders", value: stats.orders, icon: BiReceipt },
+		{ label: "Contact Queries", value: stats.contactQueries, icon: BiEnvelope },
 		{ label: "Sub Admins", value: stats.subAdmins, icon: BiUserPin },
 	];
 

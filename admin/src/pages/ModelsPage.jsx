@@ -134,7 +134,7 @@ export default function ModelsPage() {
 					rows={7}
 					globalFilter={globalFilter}
 					globalFilterFields={["title", "make.name"]}
-					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+					paginatorTemplate="PrevPageLink NextPageLink"
 					emptyMessage="No models found."
 				>
 					<Column header="No" body={numberBody} style={{ width: "80px" }} />
@@ -178,3 +178,5 @@ export default function ModelsPage() {
 		</section>
 	);
 }
+
+

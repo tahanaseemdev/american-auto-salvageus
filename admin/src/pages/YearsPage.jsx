@@ -134,7 +134,7 @@ export default function YearsPage() {
 					rows={7}
 					globalFilter={globalFilter}
 					globalFilterFields={["title", "model.title"]}
-					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+					paginatorTemplate="PrevPageLink NextPageLink"
 					emptyMessage="No years found."
 				>
 					<Column header="No" body={numberBody} style={{ width: "80px" }} />
@@ -178,3 +178,5 @@ export default function YearsPage() {
 		</section>
 	);
 }
+
+

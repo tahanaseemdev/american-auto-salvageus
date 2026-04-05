@@ -4,7 +4,6 @@ const VehicleMake = require("../models/VehicleMake");
 const VehicleModel = require("../models/VehicleModel");
 const VehicleYear = require("../models/VehicleYear");
 const VehicleTrim = require("../models/VehicleTrim");
-const Product = require("../models/Product");
 const { sendJsonResponse } = require("../utils/helpers");
 
 const isValidId = (value) => mongoose.isValidObjectId(value);
@@ -15,41 +14,129 @@ const getIdString = (value) => {
 	return String(value);
 };
 
-const toTitleObject = (value) => {
-	if (!value) return null;
-	if (typeof value === "object" && (value.title || value._id)) return value;
-	return { _id: null, title: String(value) };
-};
+async function fetchLiveTrimsBySelection({ partTitle, makeName, modelTitle, yearTitle }) {
+	if (!partTitle || !makeName || !modelTitle || !yearTitle) return [];
 
-async function hydrateVehicleRefs(products) {
-	if (!Array.isArray(products) || products.length === 0) return products;
+	const url = new URL("https://allusedautoparts.world/api/ymm_options.php");
+	url.searchParams.set("level", "trim");
+	url.searchParams.set("part", partTitle);
+	url.searchParams.set("make", makeName);
+	url.searchParams.set("model", modelTitle);
+	url.searchParams.set("year", yearTitle);
 
-	const modelIds = [...new Set(products.map((item) => getIdString(item.model)).filter((id) => isValidId(id)))];
-	const yearIds = [...new Set(products.map((item) => getIdString(item.year)).filter((id) => isValidId(id)))];
-	const trimIds = [...new Set(products.map((item) => getIdString(item.trim)).filter((id) => isValidId(id)))];
+	try {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 8000);
+		const response = await fetch(url.toString(), {
+			headers: { Accept: "application/json" },
+			signal: controller.signal,
+		});
+		clearTimeout(timeoutId);
 
-	const [models, years, trims] = await Promise.all([
-		modelIds.length ? VehicleModel.find({ _id: { $in: modelIds } }).select("title").lean() : [],
-		yearIds.length ? VehicleYear.find({ _id: { $in: yearIds } }).select("title").lean() : [],
-		trimIds.length ? VehicleTrim.find({ _id: { $in: trimIds } }).select("title").lean() : [],
-	]);
+		if (!response.ok) return [];
+		const payload = await response.json();
+		if (!Array.isArray(payload?.values)) return [];
+		return payload.values
+			.map((value) => String(value || "").trim())
+			.filter(Boolean)
+			.map((title, index) => ({
+				_id: `${partTitle}-${makeName}-${modelTitle}-${yearTitle}-${index}`.toLowerCase().replace(/\s+/g, "-"),
+				title,
+				year: null,
+			}));
+	} catch {
+		return [];
+	}
+}
 
-	const modelMap = new Map(models.map((item) => [String(item._id), item]));
-	const yearMap = new Map(years.map((item) => [String(item._id), item]));
-	const trimMap = new Map(trims.map((item) => [String(item._id), item]));
+function buildSyntheticProducts({ category, selectedMake, selectedModel, selectedYear, selectedTrim, models = [], years = [], trims = [] }) {
+	const baseImage = category?.image || "";
+	const partName = category?.title || "Part";
+	const makeName = selectedMake?.name || "";
+	const modelName = selectedModel?.title || "";
+	const yearName = selectedYear?.title || "";
 
-	return products.map((item) => {
-		const modelId = getIdString(item.model);
-		const yearId = getIdString(item.year);
-		const trimId = getIdString(item.trim);
+	const buildName = ({ yearTitle = "", trimTitle = "" }) => {
+		return [yearTitle, makeName, modelName, partName, trimTitle].filter(Boolean).join(" ");
+	};
 
-		return {
-			...item,
-			model: modelMap.get(modelId) || toTitleObject(item.model),
-			year: yearMap.get(yearId) || toTitleObject(item.year),
-			trim: trimMap.get(trimId) || toTitleObject(item.trim),
-		};
-	});
+	if (selectedTrim) {
+		const productId = `${getIdString(category?._id)}-${getIdString(selectedMake?._id)}-${getIdString(selectedModel?._id)}-${getIdString(selectedYear?._id)}-${getIdString(selectedTrim?._id)}`;
+		return [{
+			_id: productId,
+			name: buildName({ yearTitle: yearName, trimTitle: selectedTrim.title }),
+			image: baseImage,
+			price: 0,
+			category,
+			subCategory: selectedMake,
+			model: selectedModel,
+			year: selectedYear,
+			trim: selectedTrim,
+			synthetic: true,
+		}];
+	}
+
+	if (selectedYear) {
+		if (trims.length > 0) {
+			return trims.map((trimItem) => ({
+				_id: `${getIdString(category?._id)}-${getIdString(selectedMake?._id)}-${getIdString(selectedModel?._id)}-${getIdString(selectedYear?._id)}-${getIdString(trimItem?._id)}`,
+				name: buildName({ yearTitle: yearName, trimTitle: trimItem.title }),
+				image: baseImage,
+				price: 0,
+				category,
+				subCategory: selectedMake,
+				model: selectedModel,
+				year: selectedYear,
+				trim: trimItem,
+				synthetic: true,
+			}));
+		}
+
+		return [{
+			_id: `${getIdString(category?._id)}-${getIdString(selectedMake?._id)}-${getIdString(selectedModel?._id)}-${getIdString(selectedYear?._id)}`,
+			name: buildName({ yearTitle: yearName }),
+			image: baseImage,
+			price: 0,
+			category,
+			subCategory: selectedMake,
+			model: selectedModel,
+			year: selectedYear,
+			trim: null,
+			synthetic: true,
+		}];
+	}
+
+	if (selectedModel) {
+		return years.slice(0, 60).map((yearItem) => ({
+			_id: `${getIdString(category?._id)}-${getIdString(selectedMake?._id)}-${getIdString(selectedModel?._id)}-${getIdString(yearItem?._id)}`,
+			name: buildName({ yearTitle: yearItem.title }),
+			image: baseImage,
+			price: 0,
+			category,
+			subCategory: selectedMake,
+			model: selectedModel,
+			year: yearItem,
+			trim: null,
+			synthetic: true,
+		}));
+	}
+
+	if (selectedMake) {
+		return models.slice(0, 60).map((modelItem) => ({
+			_id: `${getIdString(category?._id)}-${getIdString(selectedMake?._id)}-${getIdString(modelItem?._id)}`,
+			name: [selectedMake.name, modelItem.title, partName].filter(Boolean).join(" "),
+			image: baseImage,
+			price: 0,
+			category,
+			subCategory: selectedMake,
+			model: modelItem,
+			year: null,
+			trim: null,
+			synthetic: true,
+		}));
+	}
+
+	return [];
 }
 
 async function getAllCategories(req, res, next) {
@@ -82,9 +169,6 @@ async function getCategoryDetail(req, res, next) {
 		if (year && !isValidId(year)) {
 			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid year id.");
 		}
-		if (trim && !isValidId(trim)) {
-			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid trim id.");
-		}
 
 		const [category, makes] = await Promise.all([
 			VehiclePart.findById(id).lean(),
@@ -102,20 +186,36 @@ async function getCategoryDetail(req, res, next) {
 		const years = selectedModelId ? await VehicleYear.find({ model: selectedModelId }).lean() : [];
 
 		const selectedYearId = year || null;
-		const trims = selectedYearId ? await VehicleTrim.find({ year: selectedYearId }).lean() : [];
+		const dbTrims = selectedYearId ? await VehicleTrim.find({ year: selectedYearId }).lean() : [];
 
-		const productFilter = { category: id };
-		if (selectedMakeId) productFilter.subCategory = selectedMakeId;
-		if (selectedModelId) productFilter.model = selectedModelId;
-		if (selectedYearId) productFilter.year = selectedYearId;
-		if (trim) productFilter.trim = trim;
+		const selectedMake = selectedMakeId ? makes.find((entry) => getIdString(entry._id) === selectedMakeId) || null : null;
+		const selectedModel = selectedModelId ? models.find((entry) => getIdString(entry._id) === selectedModelId) || null : null;
+		const selectedYear = selectedYearId ? years.find((entry) => getIdString(entry._id) === selectedYearId) || null : null;
 
-		const products = await Product.find(productFilter)
-			.populate("category", "title")
-			.populate("subCategory", "name")
-			.lean();
+		let trims = dbTrims;
+		if (selectedMake && selectedModel && selectedYear) {
+			const liveTrims = await fetchLiveTrimsBySelection({
+				partTitle: category.title,
+				makeName: selectedMake.name,
+				modelTitle: selectedModel.title,
+				yearTitle: selectedYear.title,
+			});
+			if (liveTrims.length > 0) {
+				trims = liveTrims;
+			}
+		}
 
-		const hydratedProducts = await hydrateVehicleRefs(products);
+		const selectedTrim = trim ? trims.find((entry) => getIdString(entry._id) === trim) || null : null;
+		const syntheticProducts = buildSyntheticProducts({
+			category,
+			selectedMake,
+			selectedModel,
+			selectedYear,
+			selectedTrim,
+			models,
+			years,
+			trims,
+		});
 
 		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Part detail fetched.", {
 			part: category,
@@ -125,7 +225,7 @@ async function getCategoryDetail(req, res, next) {
 			models,
 			years,
 			trims,
-			products: hydratedProducts,
+			products: syntheticProducts,
 		});
 	} catch (err) {
 		next(err);

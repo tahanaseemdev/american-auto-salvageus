@@ -348,13 +348,19 @@ export default function Home() {
 		let cancelled = false;
 
 		async function loadTrims() {
-			if (!filters.year) {
+			if (!filters.part || !filters.make || !filters.model || !filters.year) {
 				setFilterOptions((prev) => ({ ...prev, trims: [] }));
 				return;
 			}
 
 			try {
-				const { data } = await api.get(`/catalog/trims?year=${filters.year}`);
+				const params = new URLSearchParams({
+					part: filters.part,
+					make: filters.make,
+					model: filters.model,
+					year: filters.year,
+				});
+				const { data } = await api.get(`/catalog/trims?${params.toString()}`);
 				if (cancelled) return;
 				setFilterOptions((prev) => ({ ...prev, trims: data?.data || [] }));
 			} catch {
@@ -368,7 +374,7 @@ export default function Home() {
 		return () => {
 			cancelled = true;
 		};
-	}, [filters.year]);
+	}, [filters.part, filters.make, filters.model, filters.year]);
 
 	const onFilterChange = (name, value) => {
 		setFilters((prev) => {

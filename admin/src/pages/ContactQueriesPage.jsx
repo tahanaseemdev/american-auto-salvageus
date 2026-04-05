@@ -91,7 +91,7 @@ export default function ContactQueriesPage() {
 					rows={10}
 					globalFilter={globalFilter}
 					globalFilterFields={["name", "email", "phone", "subject", "message"]}
-					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+					paginatorTemplate="PrevPageLink NextPageLink"
 					emptyMessage="No contact queries found."
 					sortField="createdAt"
 					sortOrder={-1}
@@ -110,3 +110,5 @@ export default function ContactQueriesPage() {
 		</section>
 	);
 }
+
+

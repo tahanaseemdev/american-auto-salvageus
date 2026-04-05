@@ -159,7 +159,7 @@ export default function CategoriesPage() {
 					rows={7}
 					globalFilter={globalFilter}
 					globalFilterFields={["title", "image"]}
-					paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+					paginatorTemplate="PrevPageLink NextPageLink"
 					emptyMessage="No categories found."
 				>
 					<Column header="No" body={numberBody} style={{ width: "80px" }} />
@@ -209,3 +209,5 @@ export default function CategoriesPage() {
 		</section>
 	);
 }
+
+
