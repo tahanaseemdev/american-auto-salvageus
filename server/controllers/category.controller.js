@@ -145,10 +145,12 @@ async function fetchLiveTrimsBySelection({ partTitle, makeName, modelTitle, year
 
 function buildSyntheticProducts({
 	category,
+	allMakes = [],
 	selectedMake,
 	selectedModel,
 	selectedYear,
 	selectedTrim,
+	allModels = [],
 	models = [],
 	years = [],
 	trims = [],
@@ -338,6 +340,97 @@ function buildSyntheticProducts({
 		return expanded;
 	}
 
+	if (allMakes.length > 0) {
+		const yearsByModel = new Map();
+		for (const yearItem of allYears) {
+			const key = getIdString(yearItem?.model);
+			if (!key) continue;
+			if (!yearsByModel.has(key)) yearsByModel.set(key, []);
+			yearsByModel.get(key).push(yearItem);
+		}
+
+		const trimsByYear = new Map();
+		for (const trimItem of allTrims) {
+			const key = getIdString(trimItem?.year);
+			if (!key) continue;
+			if (!trimsByYear.has(key)) trimsByYear.set(key, []);
+			trimsByYear.get(key).push(trimItem);
+		}
+
+		const modelsByMake = new Map();
+		for (const modelItem of allModels) {
+			const key = getIdString(modelItem?.make);
+			if (!key) continue;
+			if (!modelsByMake.has(key)) modelsByMake.set(key, []);
+			modelsByMake.get(key).push(modelItem);
+		}
+
+		const expanded = [];
+		for (const makeItem of allMakes) {
+			const makeId = getIdString(makeItem?._id);
+			const makeModels = modelsByMake.get(makeId) || [];
+
+			for (const modelItem of makeModels) {
+				const modelId = getIdString(modelItem?._id);
+				const modelYears = yearsByModel.get(modelId) || [];
+
+				if (modelYears.length === 0) {
+					expanded.push({
+						_id: `${getIdString(category?._id)}-${makeId}-${modelId}`,
+						name: [makeItem.name, modelItem.title, partName].filter(Boolean).join(" "),
+						image: baseImage,
+						price: 0,
+						category,
+						subCategory: makeItem,
+						model: modelItem,
+						year: null,
+						trim: null,
+						synthetic: true,
+					});
+					continue;
+				}
+
+				for (const yearItem of modelYears) {
+					const yearId = getIdString(yearItem?._id);
+					const yearTrims = trimsByYear.get(yearId) || [];
+
+					if (yearTrims.length === 0) {
+						expanded.push({
+							_id: `${getIdString(category?._id)}-${makeId}-${modelId}-${yearId}`,
+							name: [yearItem.title, makeItem.name, modelItem.title, partName].filter(Boolean).join(" "),
+							image: baseImage,
+							price: 0,
+							category,
+							subCategory: makeItem,
+							model: modelItem,
+							year: yearItem,
+							trim: null,
+							synthetic: true,
+						});
+						continue;
+					}
+
+					for (const trimItem of yearTrims) {
+						expanded.push({
+							_id: `${getIdString(category?._id)}-${makeId}-${modelId}-${yearId}-${getIdString(trimItem?._id)}`,
+							name: [yearItem.title, makeItem.name, modelItem.title, partName, trimItem.title].filter(Boolean).join(" "),
+							image: baseImage,
+							price: 0,
+							category,
+							subCategory: makeItem,
+							model: modelItem,
+							year: yearItem,
+							trim: trimItem,
+							synthetic: true,
+						});
+					}
+				}
+			}
+		}
+
+		return expanded;
+	}
+
 	return [];
 }
 
@@ -379,6 +472,7 @@ async function getCategoryDetail(req, res, next) {
 
 		const selectedMakeId = make || null;
 		const models = selectedMakeId ? await findByForeignFlexible(VehicleModel, "make", selectedMakeId) : [];
+		const allModels = selectedMakeId ? [] : await VehicleModel.find().lean();
 
 		const selectedModelId = model || null;
 		const years = selectedModelId ? await findByForeignFlexible(VehicleYear, "model", selectedModelId) : [];
@@ -390,7 +484,13 @@ async function getCategoryDetail(req, res, next) {
 					"model",
 					models.map((item) => getIdString(item?._id))
 				)
-			: [];
+			: selectedModelId
+				? years
+				: await findByForeignManyFlexible(
+					VehicleYear,
+					"model",
+					allModels.map((item) => getIdString(item?._id))
+				);
 
 		const selectedYearId = year || null;
 		const trimYearIds = (selectedYearId ? [selectedYearId] : (selectedModelId ? years : allYears).map((item) => getIdString(item?._id)))
@@ -418,10 +518,12 @@ async function getCategoryDetail(req, res, next) {
 		const selectedTrim = trim ? trims.find((entry) => getIdString(entry._id) === trim) || null : null;
 		const syntheticProducts = buildSyntheticProducts({
 			category,
+			allMakes: makes,
 			selectedMake,
 			selectedModel,
 			selectedYear,
 			selectedTrim,
+			allModels,
 			models,
 			years,
 			trims,
