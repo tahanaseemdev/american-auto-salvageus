@@ -20,8 +20,91 @@ function normalizeObjectIdValue(value) {
 	return normalized;
 }
 
+function buildFlexibleIdFilter(field, id) {
+	const rawId = String(id || "").trim();
+	if (!rawId) return {};
+
+	const variants = [rawId];
+	if (mongoose.isValidObjectId(rawId)) {
+		variants.push(new mongoose.Types.ObjectId(rawId));
+	}
+
+	return { $or: variants.map((value) => ({ [field]: value })) };
+}
+
+function buildFlexibleFieldMatch(field, id) {
+	const rawId = String(id || "").trim();
+	if (!rawId) return null;
+
+	const variants = [rawId];
+	if (mongoose.isValidObjectId(rawId)) {
+		variants.push(new mongoose.Types.ObjectId(rawId));
+	}
+
+	return { $or: variants.map((value) => ({ [field]: value })) };
+}
+
+function shouldFetchLiveTrims(partTitle) {
+	const key = String(partTitle || "").trim().toLowerCase();
+	return key === "engine" || key === "transmission";
+}
+
+async function hydrateForeignField(items, { field, model, select }) {
+	if (!Array.isArray(items) || items.length === 0 || !field || !model) return items;
+
+	const candidateIds = [];
+	for (const item of items) {
+		const raw = item?.[field];
+		if (!raw) continue;
+
+		if (typeof raw === "object" && raw._id) {
+			candidateIds.push(String(raw._id));
+			continue;
+		}
+
+		candidateIds.push(String(raw));
+	}
+
+	const uniqueIds = [...new Set(candidateIds.map((id) => String(id || "").trim()).filter(Boolean))];
+	if (uniqueIds.length === 0) {
+		return items.map((item) => ({ ...item, [field]: null }));
+	}
+
+	const uniqueObjectIds = uniqueIds
+		.filter((id) => mongoose.isValidObjectId(id))
+		.map((id) => new mongoose.Types.ObjectId(id));
+
+	const lookupQuery = {
+		$or: [{ _id: { $in: uniqueIds } }, ...(uniqueObjectIds.length ? [{ _id: { $in: uniqueObjectIds } }] : [])],
+	};
+
+	const projection = (() => {
+		const fields = String(select || "")
+			.split(/\s+/)
+			.map((f) => f.trim())
+			.filter(Boolean)
+			.filter((f) => !f.startsWith("-"));
+		if (fields.length === 0) return undefined;
+		const p = { _id: 1 };
+		for (const f of fields) p[f] = 1;
+		return p;
+	})();
+
+	const docs = await model.collection.find(lookupQuery, { projection }).toArray();
+	const docMap = new Map(docs.map((doc) => [String(doc._id), doc]));
+
+	return items.map((item) => {
+		const raw = item?.[field];
+		const rawId = typeof raw === "object" && raw?._id ? String(raw._id) : String(raw || "");
+		return {
+			...item,
+			[field]: docMap.get(rawId) || null,
+		};
+	});
+}
+
 function buildCrudHandlers(EntityModel, options) {
-	const { label, parentField, parentLabel, filterQueryKeys = [], populate = [] } = options;
+	const { label, parentField, parentLabel, filterQueryKeys = [], populate = [], foreignModel = null, foreignSelect = "" } = options;
 	const plural = `${label}s`;
 
 	const buildFilter = (query) => {
@@ -33,7 +116,7 @@ function buildCrudHandlers(EntityModel, options) {
 					return { filter: null, invalidKey: key };
 				}
 				if (normalized) {
-					filter[parentField] = normalized;
+					Object.assign(filter, buildFlexibleIdFilter(parentField, normalized));
 				}
 				break;
 			}
@@ -41,7 +124,12 @@ function buildCrudHandlers(EntityModel, options) {
 		return { filter, invalidKey: null };
 	};
 
-	const buildFindWithPopulate = (filter, sort) => {
+	const buildFindWithPopulate = async (filter, sort) => {
+		if (foreignModel) {
+			const rows = await EntityModel.find(filter).sort(sort).lean();
+			return hydrateForeignField(rows, { field: parentField, model: foreignModel, select: foreignSelect });
+		}
+
 		let query = EntityModel.find(filter).sort(sort);
 		for (const pop of populate) {
 			query = query.populate(pop);
@@ -143,6 +231,8 @@ const models = buildCrudHandlers(VehicleModel, {
 	parentField: "make",
 	parentLabel: "make",
 	filterQueryKeys: ["make", "subCategory"],
+	foreignModel: VehicleMake,
+	foreignSelect: "name",
 	populate: [{ path: "make", select: "name" }],
 });
 
@@ -151,6 +241,8 @@ const years = buildCrudHandlers(VehicleYear, {
 	parentField: "model",
 	parentLabel: "model",
 	filterQueryKeys: ["model"],
+	foreignModel: VehicleModel,
+	foreignSelect: "title make",
 	populate: [{ path: "model", select: "title make" }],
 });
 
@@ -159,6 +251,8 @@ const trims = buildCrudHandlers(VehicleTrim, {
 	parentField: "year",
 	parentLabel: "year",
 	filterQueryKeys: ["year"],
+	foreignModel: VehicleYear,
+	foreignSelect: "title model",
 	populate: [{ path: "year", select: "title model" }],
 });
 
@@ -210,29 +304,48 @@ trims.getAll = async (req, res, next) => {
 			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid part/make/model/year id.");
 		}
 
-		if (partId && makeId && modelId && yearId) {
-			const [part, make, model, year] = await Promise.all([
-				VehiclePart.findById(partId).select("title").lean(),
-				VehicleMake.findById(makeId).select("name").lean(),
-				VehicleModel.findById(modelId).select("title").lean(),
-				VehicleYear.findById(yearId).select("title").lean(),
-			]);
-
-			if (part && make && model && year) {
-				const liveTrims = await fetchLiveTrimsBySelection({
-					partTitle: part.title,
-					makeName: make.name,
-					modelTitle: model.title,
-					yearTitle: year.title,
-				});
-
-				if (liveTrims.length > 0) {
-					return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Trims fetched.", liveTrims);
-				}
-			}
+		if (!partId && !makeId && !modelId) {
+			return defaultTrimsGetAll(req, res, next);
 		}
 
-		return defaultTrimsGetAll(req, res, next);
+		let yearIds = [];
+		if (yearId) {
+			yearIds = [yearId];
+		} else if (modelId) {
+			const modelFilter = buildFlexibleIdFilter("model", modelId);
+			const yearDocs = await VehicleYear.find(modelFilter).select("_id").lean();
+			yearIds = yearDocs.map((item) => String(item._id));
+		}
+
+		const andFilters = [];
+		if (yearIds.length > 0) {
+			const rawYearIds = [...new Set(yearIds.map((id) => String(id || "").trim()).filter(Boolean))];
+			const yearObjectIds = rawYearIds
+				.filter((id) => mongoose.isValidObjectId(id))
+				.map((id) => new mongoose.Types.ObjectId(id));
+			andFilters.push({
+				$or: [{ year: { $in: rawYearIds } }, ...(yearObjectIds.length ? [{ year: { $in: yearObjectIds } }] : [])],
+			});
+		}
+
+		const partFilter = partId ? buildFlexibleFieldMatch("part", partId) : null;
+		if (partFilter) andFilters.push(partFilter);
+
+		const makeFilter = makeId ? buildFlexibleFieldMatch("make", makeId) : null;
+		if (makeFilter) andFilters.push(makeFilter);
+
+		if (andFilters.length === 0) {
+			return defaultTrimsGetAll(req, res, next);
+		}
+
+		const trimDocs = await VehicleTrim.collection.find({ $and: andFilters }).sort({ title: 1 }).toArray();
+		const hydrated = await hydrateForeignField(trimDocs, {
+			field: "year",
+			model: VehicleYear,
+			select: "title model",
+		});
+
+		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Trims fetched.", hydrated);
 	} catch (err) {
 		next(err);
 	}

@@ -241,7 +241,7 @@ export default function Home() {
 			try {
 				const [productsRes, categoriesRes] = await Promise.all([
 					api.get('/products?featured=true&limit=8'),
-					api.get('/categories?featured=true'),
+					api.get('/parts?featured=true'),
 				]);
 
 				if (cancelled) return;
@@ -266,15 +266,14 @@ export default function Home() {
 
 		async function loadFilterOptions() {
 			try {
-				const [partsRes, makesRes] = await Promise.all([
-					api.get('/categories'),
-					api.get('/categories/sub/list'),
-				]);
+				const [partsRes, makesRes] = await Promise.all([api.get('/parts'), api.get('/parts/makes')]);
 
 				if (cancelled) return;
+				const parts = partsRes?.data?.data || [];
+				const makes = (makesRes?.data?.data || []).slice().sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')));
 				setFilterOptions({
-					parts: partsRes?.data?.data || [],
-					makes: makesRes?.data?.data || [],
+					parts,
+					makes,
 					models: [],
 					years: [],
 					trims: [],
@@ -295,16 +294,27 @@ export default function Home() {
 	useEffect(() => {
 		let cancelled = false;
 
-		async function loadModels() {
-			if (!filters.make) {
+		async function loadHierarchyOptions() {
+			if (!filters.part) {
 				setFilterOptions((prev) => ({ ...prev, models: [], years: [], trims: [] }));
 				return;
 			}
 
 			try {
-				const { data } = await api.get(`/catalog/models?make=${filters.make}`);
+				const params = new URLSearchParams();
+				if (filters.make) params.set('make', filters.make);
+				if (filters.model) params.set('model', filters.model);
+				if (filters.year) params.set('year', filters.year);
+				const url = params.toString() ? `/parts/${filters.part}?${params.toString()}` : `/parts/${filters.part}`;
+				const { data } = await api.get(url);
+				const payload = data?.data || {};
+				const makes = (payload.makes || []).slice().sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')));
+				const models = (payload.models || []).slice().sort((a, b) => String(a?.title || '').localeCompare(String(b?.title || '')));
+				const years = (payload.years || []).slice().sort((a, b) => String(a?.title || '').localeCompare(String(b?.title || '')));
+				const trims = (payload.trims || []).slice().sort((a, b) => String(a?.title || '').localeCompare(String(b?.title || '')));
+
 				if (cancelled) return;
-				setFilterOptions((prev) => ({ ...prev, models: data?.data || [], years: [], trims: [] }));
+				setFilterOptions((prev) => ({ ...prev, makes, models, years, trims }));
 			} catch {
 				if (!cancelled) {
 					setFilterOptions((prev) => ({ ...prev, models: [], years: [], trims: [] }));
@@ -312,65 +322,7 @@ export default function Home() {
 			}
 		}
 
-		loadModels();
-		return () => {
-			cancelled = true;
-		};
-	}, [filters.make]);
-
-	useEffect(() => {
-		let cancelled = false;
-
-		async function loadYears() {
-			if (!filters.model) {
-				setFilterOptions((prev) => ({ ...prev, years: [], trims: [] }));
-				return;
-			}
-
-			try {
-				const { data } = await api.get(`/catalog/years?model=${filters.model}`);
-				if (cancelled) return;
-				setFilterOptions((prev) => ({ ...prev, years: data?.data || [], trims: [] }));
-			} catch {
-				if (!cancelled) {
-					setFilterOptions((prev) => ({ ...prev, years: [], trims: [] }));
-				}
-			}
-		}
-
-		loadYears();
-		return () => {
-			cancelled = true;
-		};
-	}, [filters.model]);
-
-	useEffect(() => {
-		let cancelled = false;
-
-		async function loadTrims() {
-			if (!filters.part || !filters.make || !filters.model || !filters.year) {
-				setFilterOptions((prev) => ({ ...prev, trims: [] }));
-				return;
-			}
-
-			try {
-				const params = new URLSearchParams({
-					part: filters.part,
-					make: filters.make,
-					model: filters.model,
-					year: filters.year,
-				});
-				const { data } = await api.get(`/catalog/trims?${params.toString()}`);
-				if (cancelled) return;
-				setFilterOptions((prev) => ({ ...prev, trims: data?.data || [] }));
-			} catch {
-				if (!cancelled) {
-					setFilterOptions((prev) => ({ ...prev, trims: [] }));
-				}
-			}
-		}
-
-		loadTrims();
+		loadHierarchyOptions();
 		return () => {
 			cancelled = true;
 		};
@@ -437,7 +389,7 @@ export default function Home() {
 		? featuredCategories.map((category) => ({
 			title: category.title,
 			img: category.image ? resolveImageUrl(category.image) : 'https://allusedautoparts.world/aaps-img/alternator.jpg',
-			href: `/shop/category/${category._id}`,
+			href: `/shop/part/${category._id}`,
 		}))
 		: partsGrid;
 

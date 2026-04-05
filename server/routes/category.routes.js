@@ -16,12 +16,14 @@ const checkPermission = require("../middleware/checkPermission");
 
 // Public routes
 router.get("/", getAllCategories);
+router.get("/makes", getSubCategories);
 
 // Sub-categories (public read, admin write)
 router.get("/sub/list", getSubCategories);
 
 // Admin-protected routes
 router.get("/admin/all", authenticate, checkPermission("view_categories"), adminGetAll);
+router.get("/makes/admin/all", authenticate, checkPermission("view_sub_categories"), getSubCategories);
 router.get("/sub/admin/list", authenticate, checkPermission("view_sub_categories"), getSubCategories);
 router.post("/", authenticate, checkPermission("edit_categories"), createCategory);
 router.put("/:id", authenticate, checkPermission("edit_categories"), updateCategory);

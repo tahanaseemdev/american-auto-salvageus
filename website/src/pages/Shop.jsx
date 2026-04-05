@@ -70,22 +70,22 @@ function Hero({ title, subtitle }) {
 	);
 }
 
-function Breadcrumbs({ category, make, model, year, trim, categoryId, subCategoryId, modelId, yearId }) {
+function Breadcrumbs({ part, make, model, year, trim, partId, makeId, modelId, yearId }) {
 	return (
 		<div className="flex flex-wrap items-center gap-2 text-[11px] font-black tracking-widest uppercase text-neutral-400">
 			<Link to="/shop" className="hover:text-amber-500 transition-colors">Shop</Link>
-			{category && (
+			{part && (
 				<>
 					<BiChevronRight className="text-neutral-300" />
-					<Link to={`/shop/category/${categoryId}`} className="hover:text-amber-500 transition-colors">
-						{category.title}
+					<Link to={`/shop/part/${partId}`} className="hover:text-amber-500 transition-colors">
+						{part.title}
 					</Link>
 				</>
 			)}
 			{make && (
 				<>
 					<BiChevronRight className="text-neutral-300" />
-					<Link to={`/shop/category/${categoryId}/subcategory/${subCategoryId}`} className="hover:text-amber-500 transition-colors">
+					<Link to={`/shop/part/${partId}/make/${makeId}`} className="hover:text-amber-500 transition-colors">
 						{make.name}
 					</Link>
 				</>
@@ -94,7 +94,7 @@ function Breadcrumbs({ category, make, model, year, trim, categoryId, subCategor
 				<>
 					<BiChevronRight className="text-neutral-300" />
 					<Link
-						to={`/shop/category/${categoryId}/subcategory/${subCategoryId}/model/${modelId}`}
+						to={`/shop/part/${partId}/make/${makeId}/model/${modelId}`}
 						className="hover:text-amber-500 transition-colors"
 					>
 						{model.title}
@@ -105,7 +105,7 @@ function Breadcrumbs({ category, make, model, year, trim, categoryId, subCategor
 				<>
 					<BiChevronRight className="text-neutral-300" />
 					<Link
-						to={`/shop/category/${categoryId}/subcategory/${subCategoryId}/model/${modelId}/year/${yearId}`}
+						to={`/shop/part/${partId}/make/${makeId}/model/${modelId}/year/${yearId}`}
 						className="hover:text-amber-500 transition-colors"
 					>
 						{year.title}
@@ -165,18 +165,16 @@ function ProductGrid({ products }) {
 						<h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-2 flex-1">{product.name}</h3>
 
 						<div className="flex items-end justify-end mt-auto pt-3 border-t border-neutral-100">
-							{product.synthetic ? (
-								<span className="flex items-center gap-1.5 text-[11px] font-black tracking-widest uppercase px-4 py-2 rounded-lg bg-amber-100 text-amber-700">
-									Fitment Match
-								</span>
-							) : (
-								<Link
-									to={`/product/${product._id}`}
-									className="flex items-center gap-1.5 text-[11px] font-black tracking-widest uppercase px-4 py-2 rounded-lg transition-all bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white"
-								>
-									View Details
-								</Link>
-							)}
+							<Link
+								to={`/product/${product._id}`}
+								state={{ product }}
+								className={`flex items-center gap-1.5 text-[11px] font-black tracking-widest uppercase px-4 py-2 rounded-lg transition-all ${product.synthetic
+									? 'bg-amber-100 text-amber-800 hover:bg-amber-400 hover:text-neutral-900'
+									: 'bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white'
+									}`}
+							>
+								View Details
+							</Link>
 						</div>
 					</div>
 				</MotionDiv>
@@ -217,7 +215,18 @@ function HierarchyGrid({ title, emptyMessage, items, getItemLabel, getItemLink, 
 }
 
 export default function Shop() {
-	const { categoryId, subCategoryId, modelId, yearId, trimId } = useParams();
+	const {
+		partId,
+		makeId,
+		modelId,
+		yearId,
+		trimId,
+		categoryId,
+		subCategoryId,
+	} = useParams();
+
+	const activePartId = partId || categoryId;
+	const activeMakeId = makeId || subCategoryId;
 	const [searchParams] = useSearchParams();
 	const searchQuery = (searchParams.get('q') || '').trim();
 	const partFilter = (searchParams.get('part') || '').trim();
@@ -234,14 +243,14 @@ export default function Shop() {
 
 	const hasStructuredFilters = Boolean(partFilter || makeFilter || modelFilter || yearFilter || trimFilter);
 
-	const category = categoryDetail?.category || null;
-	const makes = categoryDetail?.makes || categoryDetail?.subCategories || [];
+	const part = categoryDetail?.part || null;
+	const makes = categoryDetail?.makes || [];
 	const models = categoryDetail?.models || [];
 	const years = categoryDetail?.years || [];
 	const trims = categoryDetail?.trims || [];
-	const categoryProducts = categoryDetail?.products || [];
+	const partProducts = categoryDetail?.products || [];
 
-	const activeMake = makes.find((item) => item._id === subCategoryId) || null;
+	const activeMake = makes.find((item) => item._id === activeMakeId) || null;
 	const activeModel = models.find((item) => item._id === modelId) || null;
 	const activeYear = years.find((item) => item._id === yearId) || null;
 	const activeTrim = trims.find((item) => item._id === trimId) || null;
@@ -280,7 +289,7 @@ export default function Shop() {
 					if (yearFilter) params.set('year', yearFilter);
 					if (trimFilter) params.set('trim', trimFilter);
 
-					const url = params.toString() ? `/categories/${partFilter}?${params.toString()}` : `/categories/${partFilter}`;
+					const url = params.toString() ? `/parts/${partFilter}?${params.toString()}` : `/parts/${partFilter}`;
 					const { data } = await api.get(url);
 					if (!cancelled) {
 						setCategoryDetail(data?.data || null);
@@ -290,8 +299,8 @@ export default function Shop() {
 					return;
 				}
 
-				if (!categoryId) {
-					const { data } = await api.get('/categories');
+				if (!activePartId) {
+					const { data } = await api.get('/parts');
 					if (!cancelled) {
 						setCategories(Array.isArray(data.data) ? data.data : []);
 						setCategoryDetail(null);
@@ -301,12 +310,12 @@ export default function Shop() {
 				}
 
 				const params = new URLSearchParams();
-				if (subCategoryId) params.set('make', subCategoryId);
+				if (activeMakeId) params.set('make', activeMakeId);
 				if (modelId) params.set('model', modelId);
 				if (yearId) params.set('year', yearId);
 				if (trimId) params.set('trim', trimId);
 
-				const url = params.toString() ? `/categories/${categoryId}?${params.toString()}` : `/categories/${categoryId}`;
+				const url = params.toString() ? `/parts/${activePartId}?${params.toString()}` : `/parts/${activePartId}`;
 				const { data } = await api.get(url);
 				if (!cancelled) {
 					setCategoryDetail(data?.data || null);
@@ -326,8 +335,8 @@ export default function Shop() {
 			cancelled = true;
 		};
 	}, [
-		categoryId,
-		subCategoryId,
+		activePartId,
+		activeMakeId,
 		modelId,
 		yearId,
 		trimId,
@@ -341,7 +350,7 @@ export default function Shop() {
 	]);
 
 	const heroContent = useMemo(() => {
-		if (!categoryId) {
+		if (!activePartId) {
 			if (searchQuery) {
 				return {
 					title: <>Search <span className="text-amber-400">Results</span></>,
@@ -381,7 +390,7 @@ export default function Shop() {
 			};
 		}
 
-		if (subCategoryId && activeMake) {
+		if (activeMakeId && activeMake) {
 			return {
 				title: <><span className="text-amber-400">{activeMake.name}</span> Make Parts</>,
 				subtitle: `Pick a model or browse all products listed under ${activeMake.name}.`,
@@ -389,15 +398,15 @@ export default function Shop() {
 		}
 
 		return {
-			title: <>{category?.title || 'Category'} <span className="text-amber-400">Parts</span></>,
+			title: <>{part?.title || 'Part'} <span className="text-amber-400">Parts</span></>,
 			subtitle: 'Choose a make to continue drilling down through model, year, and trim.',
 		};
 	}, [
-		categoryId,
+		activePartId,
 		searchQuery,
 		hasStructuredFilters,
-		category,
-		subCategoryId,
+		part,
+		activeMakeId,
 		modelId,
 		yearId,
 		trimId,
@@ -408,54 +417,54 @@ export default function Shop() {
 	]);
 
 	let levelConfig = null;
-	if (categoryId && !subCategoryId) {
+	if (activePartId && !activeMakeId) {
 		levelConfig = {
 			title: 'Makes',
 			emptyMessage: 'No makes available for this part yet.',
 			items: makes,
 			getItemLabel: (item) => item.name,
-			getItemLink: (item) => `/shop/category/${categoryId}/subcategory/${item._id}`,
-			activeId: subCategoryId,
+			getItemLink: (item) => `/shop/part/${activePartId}/make/${item._id}`,
+			activeId: activeMakeId,
 		};
-	} else if (categoryId && !modelId) {
+	} else if (activePartId && !modelId) {
 		levelConfig = {
 			title: 'Models',
 			emptyMessage: 'No models available for this make yet.',
 			items: models,
 			getItemLabel: (item) => item.title,
-			getItemLink: (item) => `/shop/category/${categoryId}/subcategory/${subCategoryId}/model/${item._id}`,
+			getItemLink: (item) => `/shop/part/${activePartId}/make/${activeMakeId}/model/${item._id}`,
 			activeId: modelId,
 		};
-	} else if (categoryId && !yearId) {
+	} else if (activePartId && !yearId) {
 		levelConfig = {
 			title: 'Years',
 			emptyMessage: 'No years available for this model yet.',
 			items: years,
 			getItemLabel: (item) => item.title,
-			getItemLink: (item) => `/shop/category/${categoryId}/subcategory/${subCategoryId}/model/${modelId}/year/${item._id}`,
+			getItemLink: (item) => `/shop/part/${activePartId}/make/${activeMakeId}/model/${modelId}/year/${item._id}`,
 			activeId: yearId,
 		};
-	} else if (categoryId && !trimId) {
+	} else if (activePartId && !trimId) {
 		levelConfig = {
 			title: 'Trims',
 			emptyMessage: 'No trims available for this year yet.',
 			items: trims,
 			getItemLabel: (item) => item.title,
-			getItemLink: (item) => `/shop/category/${categoryId}/subcategory/${subCategoryId}/model/${modelId}/year/${yearId}/trim/${item._id}`,
+			getItemLink: (item) => `/shop/part/${activePartId}/make/${activeMakeId}/model/${modelId}/year/${yearId}/trim/${item._id}`,
 			activeId: trimId,
 		};
 	}
 
-	const productsHeading = activeTrim?.title || activeYear?.title || activeModel?.title || activeMake?.name || category?.title || 'Category';
+	const productsHeading = activeTrim?.title || activeYear?.title || activeModel?.title || activeMake?.name || part?.title || 'Part';
 
 	const backLink = trimId
-		? `/shop/category/${categoryId}/subcategory/${subCategoryId}/model/${modelId}/year/${yearId}`
+		? `/shop/part/${activePartId}/make/${activeMakeId}/model/${modelId}/year/${yearId}`
 		: yearId
-			? `/shop/category/${categoryId}/subcategory/${subCategoryId}/model/${modelId}`
+			? `/shop/part/${activePartId}/make/${activeMakeId}/model/${modelId}`
 			: modelId
-				? `/shop/category/${categoryId}/subcategory/${subCategoryId}`
-				: subCategoryId
-					? `/shop/category/${categoryId}`
+				? `/shop/part/${activePartId}/make/${activeMakeId}`
+				: activeMakeId
+					? `/shop/part/${activePartId}`
 					: '/shop';
 
 	const backLabel = trimId
@@ -464,8 +473,8 @@ export default function Shop() {
 			? 'Back to Model'
 			: modelId
 				? 'Back to Make'
-				: subCategoryId
-					? 'Back to Category'
+				: activeMakeId
+					? 'Back to Part'
 					: 'Back to Shop';
 
 	return (
@@ -476,13 +485,13 @@ export default function Shop() {
 				<div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-7">
 					<Reveal>
 						<Breadcrumbs
-							category={category}
+							part={part}
 							make={activeMake}
 							model={activeModel}
 							year={activeYear}
 							trim={activeTrim}
-							categoryId={categoryId}
-							subCategoryId={subCategoryId}
+							partId={activePartId}
+							makeId={activeMakeId}
 							modelId={modelId}
 							yearId={yearId}
 						/>
@@ -524,9 +533,9 @@ export default function Shop() {
 									Clear Filters
 								</Link>
 							</div>
-							<ProductGrid products={categoryProducts} />
+							<ProductGrid products={partProducts} />
 						</div>
-					) : !categoryId ? (
+					) : !activePartId ? (
 						<MotionDiv
 							variants={stagger}
 							initial="hidden"
@@ -536,7 +545,7 @@ export default function Shop() {
 							{categories.map((item) => (
 								<MotionDiv key={item._id} variants={staggerItem} className="h-full">
 									<Link
-										to={`/shop/category/${item._id}`}
+										to={`/shop/part/${item._id}`}
 										className="group h-full bg-white rounded-2xl overflow-hidden border border-neutral-200 flex flex-col hover:border-amber-300 transition-colors"
 									>
 										<div className="p-3 bg-neutral-100 border-b border-neutral-200">
@@ -577,7 +586,7 @@ export default function Shop() {
 									<h2 className="font-['Barlow_Condensed',sans-serif] font-black text-3xl uppercase text-neutral-900">
 										{productsHeading} Products
 									</h2>
-									{(subCategoryId || modelId || yearId || trimId) && (
+									{(activeMakeId || modelId || yearId || trimId) && (
 										<Link
 											to={backLink}
 											className="text-[11px] font-black tracking-widest uppercase text-neutral-500 hover:text-amber-500 transition-colors"
@@ -586,7 +595,7 @@ export default function Shop() {
 										</Link>
 									)}
 								</div>
-								<ProductGrid products={categoryProducts} />
+								<ProductGrid products={partProducts} />
 							</div>
 						</div>
 					)}

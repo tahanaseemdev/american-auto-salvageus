@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
+const VehiclePart = require("../models/VehiclePart");
+const VehicleMake = require("../models/VehicleMake");
 const VehicleModel = require("../models/VehicleModel");
 const VehicleYear = require("../models/VehicleYear");
 const VehicleTrim = require("../models/VehicleTrim");
@@ -18,6 +20,75 @@ const toTitleObject = (value) => {
 	if (typeof value === "object" && (value.title || value._id)) return value;
 	return { _id: null, title: String(value) };
 };
+
+function buildProjection(select) {
+	const fields = String(select || "")
+		.split(/\s+/)
+		.map((field) => field.trim())
+		.filter(Boolean)
+		.filter((field) => !field.startsWith("-"));
+	if (fields.length === 0) return undefined;
+	const projection = { _id: 1 };
+	for (const field of fields) projection[field] = 1;
+	return projection;
+}
+
+async function findByIdFlexible(EntityModel, id, select = "") {
+	const rawId = String(id || "").trim();
+	if (!rawId) return null;
+
+	const variants = [rawId];
+	if (mongoose.isValidObjectId(rawId)) {
+		variants.push(new mongoose.Types.ObjectId(rawId));
+	}
+
+	return EntityModel.collection.findOne({ _id: { $in: variants } }, { projection: buildProjection(select) });
+}
+
+function parseSyntheticProductId(value) {
+	const parts = String(value || "")
+		.split("-")
+		.map((item) => item.trim())
+		.filter(Boolean);
+
+	if (parts.length < 3 || parts.length > 5) return null;
+
+	const [partId, makeId, modelId, yearId = null, trimId = null] = parts;
+	if (!partId || !makeId || !modelId) return null;
+
+	return { partId, makeId, modelId, yearId, trimId };
+}
+
+async function buildSyntheticProductById(syntheticId) {
+	const parsed = parseSyntheticProductId(syntheticId);
+	if (!parsed) return null;
+
+	const [part, make, model, year, trim] = await Promise.all([
+		findByIdFlexible(VehiclePart, parsed.partId, "title image"),
+		findByIdFlexible(VehicleMake, parsed.makeId, "name"),
+		findByIdFlexible(VehicleModel, parsed.modelId, "title"),
+		parsed.yearId ? findByIdFlexible(VehicleYear, parsed.yearId, "title") : null,
+		parsed.trimId ? findByIdFlexible(VehicleTrim, parsed.trimId, "title") : null,
+	]);
+
+	if (!part || !make || !model) return null;
+
+	const name = [year?.title, make?.name, model?.title, part?.title, trim?.title].filter(Boolean).join(" ");
+
+	return {
+		_id: String(syntheticId),
+		name: name || [make?.name, model?.title, part?.title].filter(Boolean).join(" "),
+		model: model || null,
+		year: year || null,
+		trim: trim || null,
+		featured: false,
+		image: part?.image || "",
+		price: 0,
+		category: part ? { _id: String(part._id), title: part.title } : null,
+		subCategory: make ? { _id: String(make._id), name: make.name } : null,
+		synthetic: true,
+	};
+}
 
 async function hydrateVehicleRefs(products) {
 	if (!Array.isArray(products) || products.length === 0) return products;
@@ -105,6 +176,14 @@ async function getProducts(req, res, next) {
 
 async function getProductById(req, res, next) {
 	try {
+		if (!isValidId(req.params.id)) {
+			const syntheticProduct = await buildSyntheticProductById(req.params.id);
+			if (syntheticProduct) {
+				return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Product fetched.", syntheticProduct);
+			}
+			return sendJsonResponse(res, HTTP_STATUS_CODES.NOT_FOUND, false, "Product not found.");
+		}
+
 		const product = await Product.findById(req.params.id)
 			.populate("category", "title")
 			.populate("subCategory", "name")

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { BiChevronRight, BiPhoneCall, BiArrowBack } from 'react-icons/bi';
 import { IoShieldCheckmark } from 'react-icons/io5';
 import api from '../utils/api';
@@ -12,12 +12,24 @@ function formatCurrency(value) {
 
 export default function ProductDetail() {
 	const { productId } = useParams();
-	const [product, setProduct] = useState(null);
+	const location = useLocation();
+	const routeProduct = location.state?.product;
+	const initialProduct = routeProduct && String(routeProduct._id) === String(productId) ? routeProduct : null;
+	const [product, setProduct] = useState(initialProduct);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
 
 	useEffect(() => {
 		let cancelled = false;
+
+		if (initialProduct?.synthetic) {
+			setProduct(initialProduct);
+			setLoading(false);
+			setError('');
+			return () => {
+				cancelled = true;
+			};
+		}
 
 		async function loadProduct() {
 			setLoading(true);
@@ -29,7 +41,12 @@ export default function ProductDetail() {
 				}
 			} catch (err) {
 				if (!cancelled) {
-					setError(err?.response?.data?.message || 'Unable to load product details right now.');
+					if (initialProduct) {
+						setProduct(initialProduct);
+						setError('');
+					} else {
+						setError(err?.response?.data?.message || 'Unable to load product details right now.');
+					}
 				}
 			} finally {
 				if (!cancelled) setLoading(false);
@@ -43,7 +60,7 @@ export default function ProductDetail() {
 		return () => {
 			cancelled = true;
 		};
-	}, [productId]);
+	}, [productId, initialProduct]);
 
 	return (
 		<div className="font-['Barlow',sans-serif]">

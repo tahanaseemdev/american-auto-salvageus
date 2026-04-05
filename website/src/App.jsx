@@ -52,6 +52,11 @@ function AppInner() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/shop" element={<Shop />} />
+        <Route path="/shop/part/:partId" element={<Shop />} />
+        <Route path="/shop/part/:partId/make/:makeId" element={<Shop />} />
+        <Route path="/shop/part/:partId/make/:makeId/model/:modelId" element={<Shop />} />
+        <Route path="/shop/part/:partId/make/:makeId/model/:modelId/year/:yearId" element={<Shop />} />
+        <Route path="/shop/part/:partId/make/:makeId/model/:modelId/year/:yearId/trim/:trimId" element={<Shop />} />
         <Route path="/shop/category/:categoryId" element={<Shop />} />
         <Route path="/shop/category/:categoryId/subcategory/:subCategoryId" element={<Shop />} />
         <Route path="/shop/category/:categoryId/subcategory/:subCategoryId/model/:modelId" element={<Shop />} />

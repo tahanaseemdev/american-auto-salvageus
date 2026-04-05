@@ -63,6 +63,7 @@ app.get("/v1", (req, res) => res.send("API version 1 — online"));
 app.use("/v1/auth", require("./routes/auth.routes"));
 app.use("/v1/user", require("./routes/user.routes"));
 app.use("/v1/categories", require("./routes/category.routes"));
+app.use("/v1/parts", require("./routes/category.routes"));
 app.use("/v1/products", require("./routes/product.routes"));
 app.use("/v1/catalog", require("./routes/catalog.routes"));
 app.use("/v1/orders", require("./routes/order.routes"));
