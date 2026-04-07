@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { BiSearch, BiCheckCircle, BiRightArrowAlt, BiUser, BiPhone, BiMenu, BiX, BiEnvelope, BiAward } from 'react-icons/bi';
@@ -58,6 +58,7 @@ function SectionLabel({ eyebrow, heading, light = false }) {
 const CATEGORIES = ['Engines', 'Transmissions', 'Alternators', 'Headlights'];
 const TICKER_ITEMS = ['Engines', 'Transmissions', 'Axles', 'Alternators', 'Headlights', 'Starters', 'Radiators', 'Catalytic Converters', 'Door Panels', 'Control Arms', 'Fuel Pumps', 'CV Shafts'];
 const SEARCH_FIELDS = ['Part', 'Make', 'Model', 'Year', 'Trim'];
+const PRIORITY_PART_TITLES = ['engine', 'engines', 'transmission', 'transmissions'];
 const popularParts = [
 	{ id: 1, title: "1971 Oldsmobile Custom Cruiser AT, RWD, TH350 Transmission", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
 	{ id: 2, title: "2009 Dodge Durango AT, 4x4, 4.7L Transmission", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
@@ -366,6 +367,26 @@ export default function Home() {
 	};
 
 	const makeOptions = filterOptions.makes;
+	const orderedPartOptions = useMemo(() => {
+		const parts = Array.isArray(filterOptions.parts) ? filterOptions.parts : [];
+		const prioritized = [];
+		const regular = [];
+
+		for (const item of parts) {
+			const title = String(item?.title || '').trim();
+			const normalized = title.toLowerCase();
+			if (PRIORITY_PART_TITLES.includes(normalized)) {
+				prioritized.push(item);
+			} else {
+				regular.push(item);
+			}
+		}
+
+		prioritized.sort((a, b) => String(a?.title || '').localeCompare(String(b?.title || '')));
+		regular.sort((a, b) => String(a?.title || '').localeCompare(String(b?.title || '')));
+
+		return [...prioritized, ...regular];
+	}, [filterOptions.parts]);
 
 	const displayedPopularParts = featuredProducts.length
 		? featuredProducts.map((part) => ({
@@ -393,6 +414,8 @@ export default function Home() {
 		}))
 		: partsGrid;
 
+	const isPriorityPart = (title) => PRIORITY_PART_TITLES.includes(String(title || '').trim().toLowerCase());
+
 	return (
 		<div className="font-['Barlow',sans-serif]">
 			<Hero />
@@ -411,8 +434,14 @@ export default function Home() {
 										<label className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">{SEARCH_FIELDS[0]}</label>
 										<select value={filters.part} onChange={(event) => onFilterChange('part', event.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer">
 											<option value="">Select...</option>
-											{filterOptions.parts.map((item) => (
-												<option key={item._id} value={item._id}>{item.title}</option>
+											{orderedPartOptions.map((item) => (
+												<option
+													key={item._id}
+													value={item._id}
+													style={isPriorityPart(item?.title) ? { fontWeight: 700 } : undefined}
+												>
+													{item.title}
+												</option>
 											))}
 										</select>
 									</div>

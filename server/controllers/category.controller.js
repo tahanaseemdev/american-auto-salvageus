@@ -434,6 +434,128 @@ function buildSyntheticProducts({
 	return [];
 }
 
+function buildPartOnlyProductsPage({
+	category,
+	allMakes = [],
+	allModels = [],
+	allYears = [],
+	allTrims = [],
+	page = 1,
+	limit = 24,
+}) {
+	const safePage = Number.isFinite(page) ? Math.max(1, page) : 1;
+	const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(100, limit)) : 24;
+	const startIndex = (safePage - 1) * safeLimit;
+	const endIndex = startIndex + safeLimit;
+
+	const baseImage = category?.image || "";
+	const partName = category?.title || "Part";
+
+	const yearsByModel = new Map();
+	for (const yearItem of allYears) {
+		const key = getIdString(yearItem?.model);
+		if (!key) continue;
+		if (!yearsByModel.has(key)) yearsByModel.set(key, []);
+		yearsByModel.get(key).push(yearItem);
+	}
+
+	const trimsByYear = new Map();
+	for (const trimItem of allTrims) {
+		const key = getIdString(trimItem?.year);
+		if (!key) continue;
+		if (!trimsByYear.has(key)) trimsByYear.set(key, []);
+		trimsByYear.get(key).push(trimItem);
+	}
+
+	const modelsByMake = new Map();
+	for (const modelItem of allModels) {
+		const key = getIdString(modelItem?.make);
+		if (!key) continue;
+		if (!modelsByMake.has(key)) modelsByMake.set(key, []);
+		modelsByMake.get(key).push(modelItem);
+	}
+
+	const products = [];
+	let totalCount = 0;
+
+	const pushIfVisible = (product) => {
+		if (totalCount >= startIndex && totalCount < endIndex) {
+			products.push(product);
+		}
+		totalCount += 1;
+	};
+
+	for (const makeItem of allMakes) {
+		const makeId = getIdString(makeItem?._id);
+		const makeModels = modelsByMake.get(makeId) || [];
+
+		for (const modelItem of makeModels) {
+			const modelId = getIdString(modelItem?._id);
+			const modelYears = yearsByModel.get(modelId) || [];
+
+			if (modelYears.length === 0) {
+				pushIfVisible({
+					_id: `${getIdString(category?._id)}-${makeId}-${modelId}`,
+					name: [makeItem.name, modelItem.title, partName].filter(Boolean).join(" "),
+					image: baseImage,
+					price: 0,
+					category,
+					subCategory: makeItem,
+					model: modelItem,
+					year: null,
+					trim: null,
+					synthetic: true,
+				});
+				continue;
+			}
+
+			for (const yearItem of modelYears) {
+				const yearId = getIdString(yearItem?._id);
+				const yearTrims = trimsByYear.get(yearId) || [];
+
+				if (yearTrims.length === 0) {
+					pushIfVisible({
+						_id: `${getIdString(category?._id)}-${makeId}-${modelId}-${yearId}`,
+						name: [yearItem.title, makeItem.name, modelItem.title, partName].filter(Boolean).join(" "),
+						image: baseImage,
+						price: 0,
+						category,
+						subCategory: makeItem,
+						model: modelItem,
+						year: yearItem,
+						trim: null,
+						synthetic: true,
+					});
+					continue;
+				}
+
+				for (const trimItem of yearTrims) {
+					pushIfVisible({
+						_id: `${getIdString(category?._id)}-${makeId}-${modelId}-${yearId}-${getIdString(trimItem?._id)}`,
+						name: [yearItem.title, makeItem.name, modelItem.title, partName, trimItem.title].filter(Boolean).join(" "),
+						image: baseImage,
+						price: 0,
+						category,
+						subCategory: makeItem,
+						model: modelItem,
+						year: yearItem,
+						trim: trimItem,
+						synthetic: true,
+					});
+				}
+			}
+		}
+	}
+
+	return {
+		products,
+		totalCount,
+		totalPages: Math.max(1, Math.ceil(totalCount / safeLimit)),
+		page: safePage,
+		limit: safeLimit,
+	};
+}
+
 async function getAllCategories(req, res, next) {
 	try {
 		const { featured } = req.query;
@@ -450,6 +572,10 @@ async function getCategoryDetail(req, res, next) {
 	try {
 		const { id } = req.params;
 		const { make, model, year, trim } = req.query;
+		const parsedPage = Number.parseInt(req.query.page, 10);
+		const parsedLimit = Number.parseInt(req.query.limit, 10);
+		const page = Number.isFinite(parsedPage) ? Math.max(1, parsedPage) : 1;
+		const limit = Number.isFinite(parsedLimit) ? Math.max(1, Math.min(100, parsedLimit)) : 24;
 
 		if (make && !isValidId(make)) {
 			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid make id.");
@@ -516,20 +642,55 @@ async function getCategoryDetail(req, res, next) {
 		const trims = dbTrims;
 
 		const selectedTrim = trim ? trims.find((entry) => getIdString(entry._id) === trim) || null : null;
-		const syntheticProducts = buildSyntheticProducts({
-			category,
-			allMakes: makes,
-			selectedMake,
-			selectedModel,
-			selectedYear,
-			selectedTrim,
-			allModels,
-			models,
-			years,
-			trims,
-			allYears,
-			allTrims,
-		});
+
+		const isPartOnlySelection = !selectedMakeId && !selectedModelId && !selectedYearId && !selectedTrim;
+		let syntheticProducts = [];
+		let pagination = {
+			page,
+			limit,
+			totalProducts: 0,
+			totalPages: 1,
+		};
+
+		if (isPartOnlySelection) {
+			const paged = buildPartOnlyProductsPage({
+				category,
+				allMakes: makes,
+				allModels,
+				allYears,
+				allTrims,
+				page,
+				limit,
+			});
+			syntheticProducts = paged.products;
+			pagination = {
+				page: paged.page,
+				limit: paged.limit,
+				totalProducts: paged.totalCount,
+				totalPages: paged.totalPages,
+			};
+		} else {
+			syntheticProducts = buildSyntheticProducts({
+				category,
+				allMakes: makes,
+				selectedMake,
+				selectedModel,
+				selectedYear,
+				selectedTrim,
+				allModels,
+				models,
+				years,
+				trims,
+				allYears,
+				allTrims,
+			});
+			pagination = {
+				page: 1,
+				limit: syntheticProducts.length || limit,
+				totalProducts: syntheticProducts.length,
+				totalPages: 1,
+			};
+		}
 
 		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Part detail fetched.", {
 			part: category,
@@ -538,6 +699,7 @@ async function getCategoryDetail(req, res, next) {
 			years,
 			trims,
 			products: syntheticProducts,
+			pagination,
 		});
 	} catch (err) {
 		next(err);

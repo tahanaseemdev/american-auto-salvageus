@@ -252,6 +252,7 @@ export default function Shop() {
 	const years = categoryDetail?.years || [];
 	const trims = categoryDetail?.trims || [];
 	const partProducts = categoryDetail?.products || [];
+	const partPagination = categoryDetail?.pagination || null;
 
 	const activeMake = makes.find((item) => item._id === activeMakeId) || null;
 	const activeModel = models.find((item) => item._id === modelId) || null;
@@ -260,13 +261,11 @@ export default function Shop() {
 
 	const isPartOnlySelection = Boolean(activePartId && !activeMakeId && !modelId && !yearId && !trimId && !searchQuery && !hasStructuredFilters);
 	const productTotalPages = isPartOnlySelection
-		? Math.max(1, Math.ceil(partProducts.length / PART_LEVEL_PAGE_SIZE))
+		? Math.max(1, Number(partPagination?.totalPages) || 1)
 		: 1;
-	const paginatedPartProducts = useMemo(() => {
-		if (!isPartOnlySelection) return partProducts;
-		const start = (productPage - 1) * PART_LEVEL_PAGE_SIZE;
-		return partProducts.slice(start, start + PART_LEVEL_PAGE_SIZE);
-	}, [isPartOnlySelection, partProducts, productPage]);
+	const totalPartProducts = isPartOnlySelection
+		? Math.max(0, Number(partPagination?.totalProducts) || 0)
+		: partProducts.length;
 
 	useEffect(() => {
 		setProductPage(1);
@@ -311,6 +310,10 @@ export default function Shop() {
 					if (modelFilter) params.set('model', modelFilter);
 					if (yearFilter) params.set('year', yearFilter);
 					if (trimFilter) params.set('trim', trimFilter);
+					if (!makeFilter && !modelFilter && !yearFilter && !trimFilter) {
+						params.set('page', String(productPage));
+						params.set('limit', String(PART_LEVEL_PAGE_SIZE));
+					}
 
 					const url = params.toString() ? `/parts/${partFilter}?${params.toString()}` : `/parts/${partFilter}`;
 					const { data } = await api.get(url);
@@ -337,6 +340,10 @@ export default function Shop() {
 				if (modelId) params.set('model', modelId);
 				if (yearId) params.set('year', yearId);
 				if (trimId) params.set('trim', trimId);
+				if (!activeMakeId && !modelId && !yearId && !trimId) {
+					params.set('page', String(productPage));
+					params.set('limit', String(PART_LEVEL_PAGE_SIZE));
+				}
 
 				const url = params.toString() ? `/parts/${activePartId}?${params.toString()}` : `/parts/${activePartId}`;
 				const { data } = await api.get(url);
@@ -370,6 +377,7 @@ export default function Shop() {
 		modelFilter,
 		yearFilter,
 		trimFilter,
+		productPage,
 	]);
 
 	const heroContent = useMemo(() => {
@@ -618,11 +626,11 @@ export default function Shop() {
 										</Link>
 									)}
 								</div>
-								<ProductGrid products={paginatedPartProducts} />
-								{isPartOnlySelection && partProducts.length > PART_LEVEL_PAGE_SIZE && (
+								<ProductGrid products={partProducts} />
+								{isPartOnlySelection && totalPartProducts > PART_LEVEL_PAGE_SIZE && (
 									<div className="mt-5 flex flex-wrap items-center justify-between gap-3">
 										<p className="text-xs font-semibold text-neutral-500 mb-0">
-											Showing {(productPage - 1) * PART_LEVEL_PAGE_SIZE + 1}-{Math.min(productPage * PART_LEVEL_PAGE_SIZE, partProducts.length)} of {partProducts.length}
+											Showing {totalPartProducts === 0 ? 0 : (productPage - 1) * PART_LEVEL_PAGE_SIZE + 1}-{Math.min(productPage * PART_LEVEL_PAGE_SIZE, totalPartProducts)} of {totalPartProducts}
 										</p>
 										<div className="flex items-center gap-2">
 											<button
