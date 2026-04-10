@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { BiArrowBack, BiLoaderAlt, BiPhoneCall } from 'react-icons/bi';
+import { FaFileInvoiceDollar } from 'react-icons/fa';
 import api from '../utils/api';
 
 const EMPTY_FORM = {
@@ -37,11 +38,15 @@ function Input({ label, name, value, onChange, type = 'text', required = false, 
 
 export default function ProductInquiry() {
 	const { productId } = useParams();
+	const [searchParams] = useSearchParams();
+	const mode = searchParams.get('mode') === 'quote' ? 'quote' : 'call';
+	const isQuoteMode = mode === 'quote';
 	const [product, setProduct] = useState(null);
 	const [loadingProduct, setLoadingProduct] = useState(true);
 	const [form, setForm] = useState(EMPTY_FORM);
 	const [sending, setSending] = useState(false);
 	const [error, setError] = useState('');
+	const [success, setSuccess] = useState('');
 
 	const fullName = useMemo(() => `${form.firstName} ${form.lastName}`.trim(), [form.firstName, form.lastName]);
 
@@ -87,6 +92,7 @@ export default function ProductInquiry() {
 
 		setSending(true);
 		setError('');
+		setSuccess('');
 
 		try {
 			const { data } = await api.post('/orders', {
@@ -108,17 +114,21 @@ export default function ProductInquiry() {
 					city: form.city,
 					state: form.state,
 					zip: form.zip,
-					notes: `Lead source: Call Now page. ${form.notes}`.trim(),
+					notes: `Lead source: ${isQuoteMode ? 'Get a Quote' : 'Call Now'} page. ${form.notes}`.trim(),
 				},
-				paymentMethod: 'whatsapp',
+				paymentMethod: isQuoteMode ? 'quote' : 'whatsapp',
 				subtotal: 0,
 				shipping: 0,
 			});
 
-			const redirectUrl = data?.data?.whatsappUrl;
-			if (!redirectUrl) {
-				throw new Error('Redirect URL is missing in response.');
+			if (isQuoteMode) {
+				setSuccess(`Quote request submitted successfully. Order #${data?.data?.orderNumber || ''}`.trim());
+				setForm(EMPTY_FORM);
+				return;
 			}
+
+			const redirectUrl = data?.data?.whatsappUrl;
+			if (!redirectUrl) throw new Error('Redirect URL is missing in response.');
 
 			window.location.href = redirectUrl;
 		} catch (err) {
@@ -147,7 +157,7 @@ export default function ProductInquiry() {
 						<BiArrowBack size={15} /> Back to Product
 					</Link>
 					<p className="font-['Barlow_Condensed',sans-serif] font-bold text-xs tracking-[0.18em] uppercase text-amber-400 mt-5 mb-2">
-						Call Now Request
+						{isQuoteMode ? 'Get a Quote' : 'Call Now Request'}
 					</p>
 					<h1 className="font-['Barlow_Condensed',sans-serif] font-black text-5xl md:text-6xl uppercase leading-none text-white">
 						{loadingProduct ? 'Loading...' : product?.name || 'Product'}
@@ -160,16 +170,26 @@ export default function ProductInquiry() {
 					<div className="bg-white rounded-2xl border border-neutral-200 p-5 sm:p-6 lg:p-7 space-y-4">
 						<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
 							<p className="text-xs text-amber-900 font-semibold leading-relaxed">
-								Share your details and our team will follow up with your product request.
+								{isQuoteMode
+									? 'Share your details and our team will send your quote shortly.'
+									: 'Share your details and our team will follow up with your product request.'}
 							</p>
-							<a href="tel:+1-866-206-9163" className="inline-flex items-center gap-2 mt-2 text-[11px] font-black tracking-widest uppercase text-amber-700 hover:text-amber-800">
-								<BiPhoneCall size={14} /> Call +1-866-206-9163
-							</a>
+							{!isQuoteMode ? (
+								<a href="tel:+1-866-206-9163" className="inline-flex items-center gap-2 mt-2 text-[11px] font-black tracking-widest uppercase text-amber-700 hover:text-amber-800">
+									<BiPhoneCall size={14} /> Call +1-866-206-9163
+								</a>
+							) : null}
 						</div>
 
 						{error ? (
 							<div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
 								{error}
+							</div>
+						) : null}
+
+						{success ? (
+							<div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
+								{success}
 							</div>
 						) : null}
 
@@ -214,8 +234,14 @@ export default function ProductInquiry() {
 									disabled={sending || loadingProduct || !product}
 									className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 disabled:opacity-60 text-white text-[12px] font-black tracking-widest uppercase px-6 py-3 rounded-lg transition-colors"
 								>
-									{sending ? <BiLoaderAlt className="animate-spin" size={15} /> : <BiPhoneCall size={15} />}
-									{sending ? 'Submitting...' : 'Submit Request'}
+									{sending ? (
+										<BiLoaderAlt className="animate-spin" size={15} />
+									) : isQuoteMode ? (
+										<FaFileInvoiceDollar size={14} />
+									) : (
+										<BiPhoneCall size={15} />
+									)}
+									{sending ? 'Submitting...' : isQuoteMode ? 'Submit Quote Request' : 'Submit & Continue to WhatsApp'}
 								</button>
 							</form>
 						)}

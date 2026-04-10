@@ -59,12 +59,39 @@ const CATEGORIES = ['Engines', 'Transmissions', 'Alternators', 'Headlights'];
 const TICKER_ITEMS = ['Engines', 'Transmissions', 'Axles', 'Alternators', 'Headlights', 'Starters', 'Radiators', 'Catalytic Converters', 'Door Panels', 'Control Arms', 'Fuel Pumps', 'CV Shafts'];
 const SEARCH_FIELDS = ['Part', 'Make', 'Model', 'Year', 'Trim'];
 const PRIORITY_PART_TITLES = ['engine', 'engines', 'transmission', 'transmissions'];
-const popularParts = [
-	{ id: 1, title: "1971 Oldsmobile Custom Cruiser AT, RWD, TH350 Transmission", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
-	{ id: 2, title: "2009 Dodge Durango AT, 4x4, 4.7L Transmission", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
-	{ id: 3, title: "2009 Suzuki Equator AT, 4.0L 6-cyl, 4x4 Transmission", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
-	{ id: 4, title: "1998 Volvo 70 Series AT, FWD, turbo, 2.3L Transmission", img: "https://allusedautoparts.world/aaps-img/transmission.jpg", tag: "Transmission" },
+const FEATURED_STATIC_PRODUCTS = [
+	{
+		id: '65f1a001c12d4a001a000016-69cfbed27b92a7441ac50bd3-69cfc2df7b92a7441ac54130-69cfc2fc7b92a7441ac541c6-911800663e091e76169d5282',
+		title: '1995 Volvo 960 Engine (2.9L, VIN 96, 6th and 7th digit), B6304F engine',
+		price: 1165,
+		img: 'https://allusedautoparts.world/aaps-img/engine.jpg',
+		tag: 'Engine',
+	},
+	{
+		id: '69cfbed17b92a7441ac50ba3-69cfbed27b92a7441ac50bbe-69cfc0ea7b92a7441ac52d10-69cfc0ff7b92a7441ac52dcf-74aa49358bbb16ec24043c1b',
+		title: '1988 Mazda MX6 Transmission AT, w/o Turbo',
+		price: 9140,
+		img: 'https://allusedautoparts.world/aaps-img/transmission.jpg',
+		tag: 'Transmission',
+	},
+	{
+		id: '69cfbed17b92a7441ac50ba3-69cfbed27b92a7441ac50bab-69cfbf837b92a7441ac514fb-69cfbfa57b92a7441ac517ab-9657809acf4becee3152bcee',
+		title: '1967 Chevrolet Suburban-10 (1988 Down) Transmission MT, 4 speed, Muncie manufactured',
+		price: 949,
+		img: 'https://allusedautoparts.world/aaps-img/transmission.jpg',
+		tag: 'Transmission',
+	},
+	{
+		id: '65f1a001c12d4a001a000016-69cfbed27b92a7441ac50baf-69cfbfd77b92a7441ac51b91-69cfbfea7b92a7441ac51cfa-927cea07235dc2ad97060ee2',
+		title: '1977 Dodge Monaco (1978 Down) Engine 8-400, 4BC VIN N (5th digit)',
+		price: 3536,
+		img: 'https://allusedautoparts.world/aaps-img/engine.jpg',
+		tag: 'Engine',
+	},
 ];
+
+const formatMoney = (value) =>
+	Number(value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 const promos = [
 	{ id: 1, eyebrow: "Big Sale", title: "Used Engines", badge: "Save 25%", img: "https://allusedautoparts.world/images/promo/promo1.jpg" },
 	{ id: 2, eyebrow: "Ready for", title: "Used Transmissions", badge: "New Arrivals", img: "https://allusedautoparts.world/images/promo/promo2.jpg" },
@@ -230,7 +257,6 @@ function Hero() {
 ════════════════════════════════ */
 export default function Home() {
 	const navigate = useNavigate();
-	const [featuredProducts, setFeaturedProducts] = useState([]);
 	const [featuredCategories, setFeaturedCategories] = useState([]);
 	const [filterOptions, setFilterOptions] = useState({ parts: [], makes: [], models: [], years: [], trims: [] });
 	const [filters, setFilters] = useState({ part: '', make: '', model: '', year: '', trim: '' });
@@ -240,19 +266,11 @@ export default function Home() {
 
 		async function loadFeatured() {
 			try {
-				const [productsRes, categoriesRes] = await Promise.all([
-					api.get('/products?featured=true&limit=8'),
-					api.get('/parts?featured=true'),
-				]);
-
+				const { data } = await api.get('/parts?featured=true');
 				if (cancelled) return;
-				setFeaturedProducts(productsRes?.data?.data?.products || []);
-				setFeaturedCategories(categoriesRes?.data?.data || []);
+				setFeaturedCategories(Array.isArray(data?.data) ? data.data : []);
 			} catch {
-				if (!cancelled) {
-					setFeaturedProducts([]);
-					setFeaturedCategories([]);
-				}
+				if (!cancelled) setFeaturedCategories([]);
 			}
 		}
 
@@ -388,22 +406,24 @@ export default function Home() {
 		return [...prioritized, ...regular];
 	}, [filterOptions.parts]);
 
-	const displayedPopularParts = featuredProducts.length
-		? featuredProducts.map((part) => ({
-			id: part._id,
-			title: part.name,
-			img: part.image ? resolveImageUrl(part.image) : 'https://allusedautoparts.world/aaps-img/transmission.jpg',
-			tag: part.category?.title || 'Featured',
-			rawProduct: part,
-		}))
-		: popularParts;
+	const displayedPopularParts = FEATURED_STATIC_PRODUCTS;
 
 	const onViewDetails = (part) => {
-		if (!part?.rawProduct?._id) {
+		if (!part?.id) {
 			navigate('/shop');
 			return;
 		}
-		navigate(`/product/${part.rawProduct._id}`);
+		navigate(`/product/${part.id}`, {
+			state: {
+				product: {
+					_id: part.id,
+					name: part.title,
+					price: part.price,
+					image: part.img,
+					synthetic: true,
+				},
+			},
+		});
 	};
 
 	const displayedPartsGrid = featuredCategories.length
@@ -575,6 +595,7 @@ export default function Home() {
 											{part.tag} · Mileage Tiers
 										</span>
 										<h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-4 grow">{part.title}</h3>
+										<div className="mb-4 text-sm font-black text-neutral-900">{formatMoney(part.price)}</div>
 										<div className="flex items-center justify-end mt-auto">
 											<motion.button
 												onClick={() => onViewDetails(part)}

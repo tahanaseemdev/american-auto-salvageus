@@ -8,6 +8,7 @@ import api from '../utils/api';
 import { resolveImageUrl } from '../utils/image';
 
 const PART_LEVEL_PAGE_SIZE = 24;
+const PRIORITY_PARTS = new Set(['engine', 'engines', 'transmission', 'transmissions']);
 
 const fadeUp = {
 	hidden: { opacity: 0, y: 28 },
@@ -508,6 +509,20 @@ export default function Shop() {
 					? 'Back to Part'
 					: 'Back to Shop';
 
+	const sortedCategories = useMemo(() => {
+		if (!Array.isArray(categories)) return [];
+		return [...categories].sort((a, b) => {
+			const aTitle = String(a?.title || '').trim();
+			const bTitle = String(b?.title || '').trim();
+			const aPriority = PRIORITY_PARTS.has(aTitle.toLowerCase());
+			const bPriority = PRIORITY_PARTS.has(bTitle.toLowerCase());
+
+			if (aPriority && !bPriority) return -1;
+			if (!aPriority && bPriority) return 1;
+			return aTitle.localeCompare(bTitle);
+		});
+	}, [categories]);
+
 	return (
 		<div className="font-['Barlow',sans-serif]">
 			<Hero title={heroContent.title} subtitle={heroContent.subtitle} />
@@ -573,29 +588,37 @@ export default function Shop() {
 							animate="visible"
 							className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
 						>
-							{categories.map((item) => (
+							{sortedCategories.map((item) => (
 								<MotionDiv key={item._id} variants={staggerItem} className="h-full">
-									<Link
-										to={`/shop/part/${item._id}`}
-										className="group h-full bg-white rounded-2xl overflow-hidden border border-neutral-200 flex flex-col hover:border-amber-300 transition-colors"
-									>
-										<div className="p-3 bg-neutral-100 border-b border-neutral-200">
-											<div className="aspect-4/3 overflow-hidden rounded-xl relative">
-												<img
-													src={item.image ? resolveImageUrl(item.image) : FALLBACK_IMAGE}
-													alt={item.title}
-													className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-												/>
-												<div className="absolute inset-0 bg-linear-to-t from-black/35 via-black/5 to-transparent" />
-											</div>
-										</div>
-										<div className="p-4 flex items-center justify-between gap-3 flex-1">
-											<h3 className="font-['Barlow_Condensed',sans-serif] font-black text-xl leading-tight uppercase text-neutral-900 min-h-12">
-												{item.title}
-											</h3>
-											<span className="text-[11px] font-black tracking-widest uppercase text-amber-500">View</span>
-										</div>
-									</Link>
+									{(() => {
+										const isPriority = PRIORITY_PARTS.has(String(item?.title || '').trim().toLowerCase());
+										return (
+											<Link
+												to={`/shop/part/${item._id}`}
+												className={`group h-full bg-white rounded-2xl overflow-hidden border flex flex-col transition-colors ${isPriority
+													? 'border-amber-300 hover:border-amber-500'
+													: 'border-neutral-200 hover:border-amber-300'
+													}`}
+											>
+												<div className="p-3 bg-neutral-100 border-b border-neutral-200">
+													<div className="aspect-4/3 overflow-hidden rounded-xl relative">
+														<img
+															src={item.image ? resolveImageUrl(item.image) : FALLBACK_IMAGE}
+															alt={item.title}
+															className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+														/>
+														<div className="absolute inset-0 bg-linear-to-t from-black/35 via-black/5 to-transparent" />
+													</div>
+												</div>
+												<div className="p-4 flex items-center justify-between gap-3 flex-1">
+													<h3 className={`font-['Barlow_Condensed',sans-serif] text-xl leading-tight uppercase min-h-12 ${isPriority ? 'font-black text-amber-700' : 'font-bold text-neutral-900'}`}>
+														{item.title}
+													</h3>
+													<span className="text-[11px] font-black tracking-widest uppercase text-amber-500">View</span>
+												</div>
+											</Link>
+										);
+									})()}
 								</MotionDiv>
 							))}
 						</MotionDiv>

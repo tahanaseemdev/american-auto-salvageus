@@ -7,6 +7,13 @@ const VehicleYear = require("../models/VehicleYear");
 const VehicleTrim = require("../models/VehicleTrim");
 const { sendJsonResponse } = require("../utils/helpers");
 
+const STATIC_PRODUCT_PRICES = new Map([
+	["65f1a001c12d4a001a000016-69cfbed27b92a7441ac50bd3-69cfc2df7b92a7441ac54130-69cfc2fc7b92a7441ac541c6-911800663e091e76169d5282", 1165],
+	["69cfbed17b92a7441ac50ba3-69cfbed27b92a7441ac50bbe-69cfc0ea7b92a7441ac52d10-69cfc0ff7b92a7441ac52dcf-74aa49358bbb16ec24043c1b", 9140],
+	["69cfbed17b92a7441ac50ba3-69cfbed27b92a7441ac50bab-69cfbf837b92a7441ac514fb-69cfbfa57b92a7441ac517ab-9657809acf4becee3152bcee", 949],
+	["65f1a001c12d4a001a000016-69cfbed27b92a7441ac50baf-69cfbfd77b92a7441ac51b91-69cfbfea7b92a7441ac51cfa-927cea07235dc2ad97060ee2", 3536],
+]);
+
 const isValidId = (value) => mongoose.isValidObjectId(value);
 
 const getIdString = (value) => {
@@ -83,7 +90,7 @@ async function buildSyntheticProductById(syntheticId) {
 		trim: trim || null,
 		featured: false,
 		image: part?.image || "",
-		price: 0,
+		price: STATIC_PRODUCT_PRICES.get(String(syntheticId)) || 0,
 		category: part ? { _id: String(part._id), title: part.title } : null,
 		subCategory: make ? { _id: String(make._id), name: make.name } : null,
 		synthetic: true,

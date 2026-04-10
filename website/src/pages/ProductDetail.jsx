@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { BiChevronRight, BiPhoneCall, BiArrowBack } from 'react-icons/bi';
+import { FaFileInvoiceDollar } from 'react-icons/fa';
 import { IoShieldCheckmark } from 'react-icons/io5';
 import api from '../utils/api';
 import { resolveImageUrl } from '../utils/image';
@@ -10,6 +11,16 @@ function formatCurrency(value) {
 	return Number(value).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
+const WHY_BUY_ITEMS = [
+	'🛠️ Fully inspected and road-tested',
+	'🛡️ 1-Year Parts Warranty included',
+	'🔄 30-Day Hassle-Free Return Policy',
+	'🧼 Cleaned and ready for installation',
+	'🚚 Free Shipping across the U.S.',
+	'📦 Securely packaged for safe transit',
+	'☎️ Support available before & after your purchase',
+];
+
 export default function ProductDetail() {
 	const { productId } = useParams();
 	const location = useLocation();
@@ -18,6 +29,7 @@ export default function ProductDetail() {
 	const [product, setProduct] = useState(initialProduct);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
+	const partName = product?.category?.title || 'part';
 
 	useEffect(() => {
 		let cancelled = false;
@@ -125,24 +137,26 @@ export default function ProductDetail() {
 									</h1>
 
 									<div className="mt-5 space-y-3 text-sm text-neutral-600">
-										<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+										<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
 											<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">Category</p>
+												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">⚙️ Part</p>
 												<p className="font-semibold text-neutral-800 mt-1">{product.category?.title || '-'}</p>
 											</div>
 											<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">Make</p>
+												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">🚗 Make</p>
 												<p className="font-semibold text-neutral-800 mt-1">{product.subCategory?.name || '-'}</p>
 											</div>
 											<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">Model</p>
+												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">🚘 Model</p>
 												<p className="font-semibold text-neutral-800 mt-1">{product.model?.title || '-'}</p>
 											</div>
 											<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">Year / Trim</p>
-												<p className="font-semibold text-neutral-800 mt-1">
-													{product.year?.title || '-'}{product.trim?.title ? ` / ${product.trim.title}` : ''}
-												</p>
+												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">📅 Year</p>
+												<p className="font-semibold text-neutral-800 mt-1">{product.year?.title || '-'}</p>
+											</div>
+											<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">🔍 Spec</p>
+												<p className="font-semibold text-neutral-800 mt-1">{product.trim?.title || '-'}</p>
 											</div>
 										</div>
 
@@ -154,14 +168,39 @@ export default function ProductDetail() {
 										</div>
 									</div>
 
-									<div className="pt-6 mt-auto">
-										<Link
-											to={`/product/${product._id}/call-now`}
-											className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white text-[12px] font-black tracking-widest uppercase px-6 py-3 rounded-lg transition-colors"
-										>
-											<BiPhoneCall size={15} />
-											Call Now
-										</Link>
+									<div className="pt-6 mt-auto space-y-4">
+										<div className="rounded-xl border border-neutral-200 bg-white px-4 py-4">
+											<p className="text-xs font-black tracking-widest uppercase text-neutral-500 mb-2">Description</p>
+											<p className="text-sm text-neutral-700 leading-relaxed">
+												This {partName} has been professionally inspected and compression-tested to ensure reliable performance. It’s a clean pullout - free from cracks, leaks, and internal damage. Backed by our 1-Year Parts Warranty and 30-Day Return Policy, this unit is ready for direct installation and built to meet factory standards. Skip the guesswork and buy with confidence.
+											</p>
+										</div>
+
+										<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-4">
+											<p className="text-xs font-black tracking-widest uppercase text-neutral-500 mb-2">Why Buy From Us?</p>
+											<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+												{WHY_BUY_ITEMS.map((item) => (
+													<p key={item} className="text-sm font-medium text-neutral-700 leading-snug">{item}</p>
+												))}
+											</div>
+										</div>
+
+										<div className="flex flex-wrap items-center gap-3">
+											<Link
+												to={`/product/${product._id}/call-now?mode=quote`}
+												className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 text-[12px] font-black tracking-widest uppercase px-6 py-3 rounded-lg transition-colors"
+											>
+												<FaFileInvoiceDollar size={14} />
+												Get a Quote
+											</Link>
+											<Link
+												to={`/product/${product._id}/call-now?mode=call`}
+												className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white text-[12px] font-black tracking-widest uppercase px-6 py-3 rounded-lg transition-colors"
+											>
+												<BiPhoneCall size={15} />
+												Call Now
+											</Link>
+										</div>
 									</div>
 								</div>
 							</div>
