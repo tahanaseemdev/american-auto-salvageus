@@ -34,13 +34,8 @@ export default function ProductDetail() {
 	useEffect(() => {
 		let cancelled = false;
 
-		if (initialProduct?.synthetic) {
+		if (initialProduct) {
 			setProduct(initialProduct);
-			setLoading(false);
-			setError('');
-			return () => {
-				cancelled = true;
-			};
 		}
 
 		async function loadProduct() {
@@ -53,12 +48,8 @@ export default function ProductDetail() {
 				}
 			} catch (err) {
 				if (!cancelled) {
-					if (initialProduct) {
-						setProduct(initialProduct);
-						setError('');
-					} else {
-						setError(err?.response?.data?.message || 'Unable to load product details right now.');
-					}
+					setProduct(initialProduct || null);
+					setError(err?.response?.data?.message || 'Unable to load product details right now.');
 				}
 			} finally {
 				if (!cancelled) setLoading(false);
@@ -117,11 +108,11 @@ export default function ProductDetail() {
 					) : (
 						<div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden">
 							<div className="grid grid-cols-1 lg:grid-cols-2">
-								<div className="bg-neutral-100 border-b lg:border-b-0 lg:border-r border-neutral-200 aspect-4/3 lg:aspect-auto">
+								<div className="bg-neutral-100 border-b lg:border-b-0 lg:border-r border-neutral-200 flex items-start justify-start p-4 sm:p-6 min-h-80 lg:min-h-[640px]">
 									{product.image ? (
-										<img src={resolveImageUrl(product.image)} alt={product.name} className="w-full h-full object-cover" />
+										<img src={resolveImageUrl(product.image)} alt={product.name} className="block max-w-full max-h-[560px] w-auto h-auto object-contain" />
 									) : (
-										<div className="w-full h-full min-h-80 flex items-center justify-center text-neutral-400">
+										<div className="w-full h-full min-h-80 flex items-start justify-start text-neutral-400">
 											<div className="text-center">
 												<IoShieldCheckmark size={34} className="mx-auto mb-3" />
 												<p className="text-sm font-semibold">Image unavailable</p>
@@ -132,40 +123,39 @@ export default function ProductDetail() {
 
 								<div className="p-6 sm:p-7 lg:p-8 flex flex-col">
 									<p className="text-[11px] font-black tracking-widest uppercase text-amber-500">Product Detail</p>
-									<h1 className="font-['Barlow_Condensed',sans-serif] font-black text-4xl uppercase leading-none text-neutral-900 mt-2">
+									<h1 className="font-['Barlow_Condensed',sans-serif] font-black text-3xl sm:text-4xl uppercase leading-none text-neutral-900 mt-2">
 										{product.name}
 									</h1>
+									<div className="flex flex-wrap items-center gap-3 my-3">
+										<Link
+											to={`/product/${product._id}/call-now?mode=quote`}
+											className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 text-[12px] font-black tracking-widest uppercase px-6 py-3 rounded-lg transition-colors"
+										>
+											<FaFileInvoiceDollar size={14} />
+											Get a Quote
+										</Link>
+										<Link
+											to={`/product/${product._id}/call-now?mode=call`}
+											className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white text-[12px] font-black tracking-widest uppercase px-6 py-3 rounded-lg transition-colors"
+										>
+											<BiPhoneCall size={15} />
+											Call Now
+										</Link>
+									</div>
 
-									<div className="mt-5 space-y-3 text-sm text-neutral-600">
-										<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-											<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">⚙️ Part</p>
-												<p className="font-semibold text-neutral-800 mt-1">{product.category?.title || '-'}</p>
-											</div>
-											<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">🚗 Make</p>
-												<p className="font-semibold text-neutral-800 mt-1">{product.subCategory?.name || '-'}</p>
-											</div>
-											<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">🚘 Model</p>
-												<p className="font-semibold text-neutral-800 mt-1">{product.model?.title || '-'}</p>
-											</div>
-											<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">📅 Year</p>
-												<p className="font-semibold text-neutral-800 mt-1">{product.year?.title || '-'}</p>
-											</div>
-											<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-												<p className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">🔍 Spec</p>
-												<p className="font-semibold text-neutral-800 mt-1">{product.trim?.title || '-'}</p>
-											</div>
-										</div>
+									<div className="mt-4 space-y-2 text-[15px] text-neutral-700">
+										<p><span className="font-black tracking-wide uppercase text-neutral-400">⚙️ Part:</span> <span className="font-semibold text-neutral-900">{product.category?.title || '-'}</span></p>
+										<p><span className="font-black tracking-wide uppercase text-neutral-400">🚗 Make:</span> <span className="font-semibold text-neutral-900">{product.subCategory?.name || '-'}</span></p>
+										<p><span className="font-black tracking-wide uppercase text-neutral-400">🚘 Model:</span> <span className="font-semibold text-neutral-900">{product.model?.title || '-'}</span></p>
+										<p><span className="font-black tracking-wide uppercase text-neutral-400">📅 Year:</span> <span className="font-semibold text-neutral-900">{product.year?.title || '-'}</span></p>
+										<p><span className="font-black tracking-wide uppercase text-neutral-400">🔍 Spec:</span> <span className="font-semibold text-neutral-900">{product.trim?.title || '-'}</span></p>
+									</div>
 
-										<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-											<p className="text-[10px] font-bold tracking-widest uppercase text-amber-700">Price</p>
-											<p className="font-black text-xl text-neutral-900 mt-1">
-												{Number(product.price) > 0 ? formatCurrency(product.price) : 'Contact for pricing'}
-											</p>
-										</div>
+									<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+										<p className="text-[9px] font-bold tracking-widest uppercase text-amber-700">Price</p>
+										<p className="font-black text-lg text-neutral-900 mt-1">
+											{Number(product.price) > 0 ? formatCurrency(product.price) : 'Contact for pricing'}
+										</p>
 									</div>
 
 									<div className="pt-6 mt-auto space-y-4">
@@ -177,29 +167,12 @@ export default function ProductDetail() {
 										</div>
 
 										<div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-4">
-											<p className="text-xs font-black tracking-widest uppercase text-neutral-500 mb-2">Why Buy From Us?</p>
-											<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+											<p className="text-[11px] font-black tracking-widest uppercase text-neutral-500 mb-2">Why Buy From Us?</p>
+											<div className="space-y-2">
 												{WHY_BUY_ITEMS.map((item) => (
-													<p key={item} className="text-sm font-medium text-neutral-700 leading-snug">{item}</p>
+													<p key={item} className="text-[13px] font-medium text-neutral-700 leading-snug">{item}</p>
 												))}
 											</div>
-										</div>
-
-										<div className="flex flex-wrap items-center gap-3">
-											<Link
-												to={`/product/${product._id}/call-now?mode=quote`}
-												className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-500 text-neutral-900 text-[12px] font-black tracking-widest uppercase px-6 py-3 rounded-lg transition-colors"
-											>
-												<FaFileInvoiceDollar size={14} />
-												Get a Quote
-											</Link>
-											<Link
-												to={`/product/${product._id}/call-now?mode=call`}
-												className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 text-white text-[12px] font-black tracking-widest uppercase px-6 py-3 rounded-lg transition-colors"
-											>
-												<BiPhoneCall size={15} />
-												Call Now
-											</Link>
 										</div>
 									</div>
 								</div>
