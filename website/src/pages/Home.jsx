@@ -385,7 +385,7 @@ export default function Home() {
 	};
 
 	const makeOptions = filterOptions.makes;
-	const orderedPartOptions = useMemo(() => {
+	const { popularPartOptions, otherPartOptions } = useMemo(() => {
 		const parts = Array.isArray(filterOptions.parts) ? filterOptions.parts : [];
 		const prioritized = [];
 		const regular = [];
@@ -403,7 +403,10 @@ export default function Home() {
 		prioritized.sort((a, b) => String(a?.title || '').localeCompare(String(b?.title || '')));
 		regular.sort((a, b) => String(a?.title || '').localeCompare(String(b?.title || '')));
 
-		return [...prioritized, ...regular];
+		return {
+			popularPartOptions: prioritized,
+			otherPartOptions: regular,
+		};
 	}, [filterOptions.parts]);
 
 	const displayedPopularParts = FEATURED_STATIC_PRODUCTS;
@@ -434,8 +437,6 @@ export default function Home() {
 		}))
 		: partsGrid;
 
-	const isPriorityPart = (title) => PRIORITY_PART_TITLES.includes(String(title || '').trim().toLowerCase());
-
 	return (
 		<div className="font-['Barlow',sans-serif]">
 			<Hero />
@@ -454,15 +455,24 @@ export default function Home() {
 										<label className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">{SEARCH_FIELDS[0]}</label>
 										<select value={filters.part} onChange={(event) => onFilterChange('part', event.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2.5 text-sm text-neutral-700 focus:ring-2 focus:ring-amber-400 focus:outline-none appearance-none cursor-pointer">
 											<option value="">Select...</option>
-											{orderedPartOptions.map((item) => (
-												<option
-													key={item._id}
-													value={item._id}
-													style={isPriorityPart(item?.title) ? { fontWeight: 700 } : undefined}
-												>
-													{item.title}
-												</option>
-											))}
+											{popularPartOptions.length > 0 ? (
+												<optgroup label="Popular Categories">
+													{popularPartOptions.map((item) => (
+														<option
+															key={item._id}
+															value={item._id}														>
+															{item.title}
+														</option>
+													))}
+												</optgroup>
+											) : null}
+											{otherPartOptions.length > 0 ? (
+												<optgroup label="Other Parts">
+													{otherPartOptions.map((item) => (
+														<option key={item._id} value={item._id}>{item.title}</option>
+													))}
+												</optgroup>
+											) : null}
 										</select>
 									</div>
 									<div className="flex flex-col gap-1">

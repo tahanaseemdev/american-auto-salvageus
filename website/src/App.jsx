@@ -17,6 +17,9 @@ import Returns from "./pages/Returns";
 import ProductDetail from "./pages/ProductDetail";
 import ProductInquiry from "./pages/ProductInquiry";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { BsWhatsapp } from "react-icons/bs";
+
+const WHATSAPP_CHAT_URL = "https://wa.me/18662069163";
 
 function ScrollToTop() {
   const location = useLocation();
@@ -74,6 +77,17 @@ function AppInner() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/returns" element={<Returns />} />
       </Routes>
+
+      <a
+        href={WHATSAPP_CHAT_URL}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Chat on WhatsApp"
+        className="fixed bottom-5 right-5 z-50 w-13 h-13 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-[0_16px_32px_rgba(0,0,0,0.25)] hover:scale-105 transition-transform"
+      >
+        <BsWhatsapp size={28} />
+      </a>
+
       {showFooter && <Footer />}
     </>
   );
