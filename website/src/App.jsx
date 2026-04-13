@@ -19,7 +19,7 @@ import ProductInquiry from "./pages/ProductInquiry";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { BsWhatsapp } from "react-icons/bs";
 
-const WHATSAPP_CHAT_URL = "https://wa.me/18662069163";
+const WHATSAPP_CHAT_URL = "https://wa.me/17089002524";
 
 function ScrollToTop() {
   const location = useLocation();
