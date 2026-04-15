@@ -29,6 +29,7 @@ export default function ProductDetail() {
 	const [product, setProduct] = useState(initialProduct);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
+	const hasPrice = Number(product?.price) > 0;
 	const partName = product?.category?.title || 'part';
 
 	useEffect(() => {
@@ -151,12 +152,12 @@ export default function ProductDetail() {
 										<p><span className="font-black tracking-wide uppercase text-neutral-400">🔍 Spec:</span> <span className="font-semibold text-neutral-900">{product.trim?.title || '-'}</span></p>
 									</div>
 
-									<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-										<p className="text-[9px] font-bold tracking-widest uppercase text-amber-700">Price</p>
-										<p className="font-black text-lg text-neutral-900 mt-1">
-											{Number(product.price) > 0 ? formatCurrency(product.price) : 'Contact for pricing'}
-										</p>
-									</div>
+									{hasPrice ? (
+										<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+											<p className="text-[9px] font-bold tracking-widest uppercase text-amber-700">Price</p>
+											<p className="font-black text-lg text-neutral-900 mt-1">{formatCurrency(product.price)}</p>
+										</div>
+									) : null}
 
 									<div className="pt-6 mt-auto space-y-4">
 										<div className="rounded-xl border border-neutral-200 bg-white px-4 py-4">
