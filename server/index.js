@@ -30,12 +30,14 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
 	.map((o) => o.trim())
 	.filter(Boolean);
 
+const environmentStatus = process.env.ENVIRONMENT_STATUS;
+
 const corsOptions = {
 	origin: function (origin, callback) {
 		// Allow requests with no origin (Postman, curl, server-to-server)
 		if (!origin) return callback(null, true);
 		// In local/dev mode, allow all origins so testing is frictionless
-		if (process.env.ENVIRONMENT_STATUS === "local") return callback(null, true);
+		if (environmentStatus === "local") return callback(null, true);
 		// Production: enforce whitelist
 		if (allowedOrigins.includes(origin)) return callback(null, true);
 		callback(new Error(`CORS: origin "${origin}" not allowed`));
@@ -87,5 +89,5 @@ app.use((err, req, res, _next) => {
 
 server.listen(PORT, () => {
 	console.info(`Server running on http://localhost:${PORT}`);
-	console.info(`Environment: ${process.env.ENVIRONMENT_STATUS}`);
+	console.info(`Environment: ${environmentStatus}`);
 });

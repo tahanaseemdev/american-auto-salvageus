@@ -14,6 +14,8 @@ const STATIC_PRODUCT_PRICES = new Map([
 	["65f1a001c12d4a001a000016-69cfbed27b92a7441ac50baf-69cfbfd77b92a7441ac51b91-69cfbfea7b92a7441ac51cfa-927cea07235dc2ad97060ee2", 3536],
 ]);
 
+const MILEAGE_PRICED_PARTS = new Set(["engine", "engines", "transmission", "transmissions"]);
+
 const isValidId = (value) => mongoose.isValidObjectId(value);
 
 const getIdString = (value) => {
@@ -37,6 +39,61 @@ const normalizePriceValue = (value) => {
 
 	const parsed = Number(normalized);
 	return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const isMileagePricedPart = (partTitle) => {
+	const key = String(partTitle || "").trim().toLowerCase();
+	return MILEAGE_PRICED_PARTS.has(key);
+};
+
+const normalizeMileageBands = (trimDoc) => {
+	if (!Array.isArray(trimDoc?.mileageBands)) return [];
+
+	return trimDoc.mileageBands
+		.map((band, index) => {
+			const key = String(band?.key || `price${index + 1}`).trim() || `price${index + 1}`;
+			const label = String(band?.label || "").trim() || String(band?.mileage || "").trim() || `Option ${index + 1}`;
+			const mileage = String(band?.mileage || "").trim();
+			const amount = normalizePriceValue(band?.amount ?? band?.price);
+
+			return {
+				key,
+				label,
+				mileage,
+				price: String((band?.price ?? amount) || "").trim(),
+				amount,
+				selected: Boolean(band?.selected),
+			};
+		})
+		.filter((band) => band.label && Number.isFinite(band.amount) && band.amount >= 0);
+};
+
+const resolveSelectedMileageBand = (mileageBands, requestedBandKey) => {
+	if (!Array.isArray(mileageBands) || mileageBands.length === 0) {
+		return { mileageBands: [], selectedMileageBand: null };
+	}
+
+	const requested = String(requestedBandKey || "").trim().toLowerCase();
+	let selected = null;
+
+	if (requested) {
+		selected = mileageBands.find((band) => String(band.key || "").trim().toLowerCase() === requested);
+	}
+
+	if (!selected) {
+		selected = mileageBands.find((band) => band.selected) || mileageBands[0];
+	}
+
+	const selectedKey = String(selected?.key || "").trim();
+	const normalizedBands = mileageBands.map((band) => ({
+		...band,
+		selected: String(band.key || "").trim() === selectedKey,
+	}));
+
+	return {
+		mileageBands: normalizedBands,
+		selectedMileageBand: normalizedBands.find((band) => band.selected) || null,
+	};
 };
 
 function buildProjection(select) {
@@ -77,7 +134,7 @@ function parseSyntheticProductId(value) {
 	return { partId, makeId, modelId, yearId, trimId };
 }
 
-async function buildSyntheticProductById(syntheticId) {
+async function buildSyntheticProductById(syntheticId, { mileageBandKey } = {}) {
 	const parsed = parseSyntheticProductId(syntheticId);
 	if (!parsed) return null;
 
@@ -86,16 +143,21 @@ async function buildSyntheticProductById(syntheticId) {
 		findByIdFlexible(VehicleMake, parsed.makeId, "name"),
 		findByIdFlexible(VehicleModel, parsed.modelId, "title"),
 		parsed.yearId ? findByIdFlexible(VehicleYear, parsed.yearId, "title") : null,
-		parsed.trimId ? findByIdFlexible(VehicleTrim, parsed.trimId, "title price") : null,
+		parsed.trimId ? findByIdFlexible(VehicleTrim, parsed.trimId, "title price mileageBands") : null,
 	]);
 
 	if (!part || !make || !model) return null;
 
 	const name = [year?.title, make?.name, model?.title, part?.title, trim?.title].filter(Boolean).join(" ");
+	const mileagePriced = isMileagePricedPart(part?.title);
+	const rawMileageBands = mileagePriced ? normalizeMileageBands(trim) : [];
+	const { mileageBands, selectedMileageBand } = resolveSelectedMileageBand(rawMileageBands, mileageBandKey);
 	const syntheticFallbackPrice = STATIC_PRODUCT_PRICES.get(String(syntheticId)) || 0;
-	const resolvedPrice = trim?.price !== undefined && trim?.price !== null
-		? normalizePriceValue(trim.price)
-		: syntheticFallbackPrice;
+	const resolvedPrice = selectedMileageBand
+		? normalizePriceValue(selectedMileageBand.amount)
+		: trim?.price !== undefined && trim?.price !== null
+			? normalizePriceValue(trim.price)
+			: syntheticFallbackPrice;
 
 	return {
 		_id: String(syntheticId),
@@ -108,6 +170,10 @@ async function buildSyntheticProductById(syntheticId) {
 		price: resolvedPrice,
 		category: part ? { _id: String(part._id), title: part.title } : null,
 		subCategory: make ? { _id: String(make._id), name: make.name } : null,
+		mileageBands,
+		selectedMileageBand,
+		priceSource: selectedMileageBand ? "mileageBand" : "trim",
+		mileagePriced,
 		synthetic: true,
 	};
 }
@@ -200,7 +266,9 @@ async function getProducts(req, res, next) {
 async function getProductById(req, res, next) {
 	try {
 		if (!isValidId(req.params.id)) {
-			const syntheticProduct = await buildSyntheticProductById(req.params.id);
+			const syntheticProduct = await buildSyntheticProductById(req.params.id, {
+				mileageBandKey: req.query?.mileageBand || req.query?.band,
+			});
 			if (syntheticProduct) {
 				return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Product fetched.", syntheticProduct);
 			}

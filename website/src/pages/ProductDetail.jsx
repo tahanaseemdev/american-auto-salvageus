@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BiChevronRight, BiPhoneCall, BiArrowBack } from 'react-icons/bi';
 import { FaFileInvoiceDollar } from 'react-icons/fa';
@@ -23,6 +23,8 @@ const WHY_BUY_ITEMS = [
 	'☎️ Support available before & after your purchase',
 ];
 
+const MILEAGE_PARTS = new Set(['engine', 'engines', 'transmission', 'transmissions']);
+
 function buildSyntheticProductId(product, trimId) {
 	const partId = String(product?.category?._id || '').trim();
 	const makeId = String(product?.subCategory?._id || '').trim();
@@ -44,10 +46,25 @@ export default function ProductDetail() {
 	const [loading, setLoading] = useState(true);
 	const [trimOptions, setTrimOptions] = useState([]);
 	const [error, setError] = useState('');
+	const [selectedMileageBandKey, setSelectedMileageBandKey] = useState('');
+
+	const partKey = String(product?.category?.title || '').trim().toLowerCase();
+	const isMileagePart = MILEAGE_PARTS.has(partKey);
+	const mileageBands = useMemo(() => (Array.isArray(product?.mileageBands) ? product.mileageBands : []), [product?.mileageBands]);
+	const selectedMileageBand = useMemo(() => {
+		if (!mileageBands.length) return null;
+		if (selectedMileageBandKey) {
+			return mileageBands.find((band) => String(band?.key || '') === selectedMileageBandKey) || null;
+		}
+		return mileageBands.find((band) => band?.selected) || mileageBands[0] || null;
+	}, [mileageBands, selectedMileageBandKey]);
+
 	const normalizedPrice =
-		typeof product?.price === 'number'
-			? product.price
-			: Number(String(product?.price ?? '').replace(/[^0-9.-]/g, ''));
+		selectedMileageBand && Number.isFinite(Number(selectedMileageBand?.amount))
+			? Number(selectedMileageBand.amount)
+			: typeof product?.price === 'number'
+				? product.price
+				: Number(String(product?.price ?? '').replace(/[^0-9.-]/g, ''));
 	const hasPrice = Number.isFinite(normalizedPrice) && normalizedPrice > 0;
 	const partName = product?.category?.title || 'part';
 	const selectedTrimId = String(product?.trim?._id || '');
@@ -85,6 +102,19 @@ export default function ProductDetail() {
 			cancelled = true;
 		};
 	}, [productId, initialProduct]);
+
+	useEffect(() => {
+		const preselectedKey = String(product?.selectedMileageBand?.key || '').trim();
+		if (preselectedKey) {
+			setSelectedMileageBandKey(preselectedKey);
+			return;
+		}
+
+		const firstSelected = Array.isArray(product?.mileageBands)
+			? product.mileageBands.find((band) => band?.selected)
+			: null;
+		setSelectedMileageBandKey(String(firstSelected?.key || ''));
+	}, [product]);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -217,6 +247,26 @@ export default function ProductDetail() {
 										<p><span className="font-black tracking-wide uppercase text-neutral-400">🔍 Spec:</span> <span className="font-semibold text-neutral-900">{product.trim?.title || '-'}</span></p>
 									</div>
 
+									{isMileagePart && mileageBands.length > 0 ? (
+										<div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-4">
+											<label htmlFor="mileage-band" className="block text-[11px] font-black tracking-widest uppercase text-neutral-500 mb-2">
+												Choose Miles
+											</label>
+											<select
+												id="mileage-band"
+												value={selectedMileageBand?.key || ''}
+												onChange={(event) => setSelectedMileageBandKey(event.target.value)}
+												className="w-full bg-white border border-neutral-300 focus:border-amber-400 rounded-lg px-3 py-2.5 text-sm text-neutral-800 outline-none"
+											>
+												{mileageBands.map((band) => (
+													<option key={band.key} value={band.key}>
+														{band.label} — {formatCurrency(band.amount)}
+													</option>
+												))}
+											</select>
+										</div>
+									) : null}
+
 									{trimOptions.length > 0 ? (
 										<div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-4">
 											<div className="block text-[11px] font-black tracking-widest uppercase text-neutral-500 mb-3">
@@ -254,6 +304,9 @@ export default function ProductDetail() {
 										<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
 											<p className="text-[9px] font-bold tracking-widest uppercase text-amber-700">Price</p>
 											<p className="font-black text-lg text-neutral-900 mt-1">{formatCurrency(normalizedPrice)}</p>
+											{selectedMileageBand?.label ? (
+												<p className="text-xs font-semibold text-neutral-600 mt-1">{selectedMileageBand.label}</p>
+											) : null}
 										</div>
 									) : null}
 
