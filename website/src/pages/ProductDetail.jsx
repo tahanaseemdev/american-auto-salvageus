@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BiChevronRight, BiPhoneCall, BiArrowBack } from 'react-icons/bi';
 import { FaFileInvoiceDollar } from 'react-icons/fa';
 import { IoShieldCheckmark } from 'react-icons/io5';
@@ -23,13 +23,26 @@ const WHY_BUY_ITEMS = [
 	'☎️ Support available before & after your purchase',
 ];
 
+function buildSyntheticProductId(product, trimId) {
+	const partId = String(product?.category?._id || '').trim();
+	const makeId = String(product?.subCategory?._id || '').trim();
+	const modelId = String(product?.model?._id || '').trim();
+	const yearId = String(product?.year?._id || '').trim();
+	const selectedTrimId = String(trimId || product?.trim?._id || '').trim();
+
+	if (!partId || !makeId || !modelId || !yearId || !selectedTrimId) return '';
+	return `${partId}-${makeId}-${modelId}-${yearId}-${selectedTrimId}`;
+}
+
 export default function ProductDetail() {
 	const { productId } = useParams();
+	const navigate = useNavigate();
 	const location = useLocation();
 	const routeProduct = location.state?.product;
 	const initialProduct = routeProduct && String(routeProduct._id) === String(productId) ? routeProduct : null;
 	const [product, setProduct] = useState(initialProduct);
 	const [loading, setLoading] = useState(true);
+	const [trimOptions, setTrimOptions] = useState([]);
 	const [error, setError] = useState('');
 	const normalizedPrice =
 		typeof product?.price === 'number'
@@ -37,6 +50,7 @@ export default function ProductDetail() {
 			: Number(String(product?.price ?? '').replace(/[^0-9.-]/g, ''));
 	const hasPrice = Number.isFinite(normalizedPrice) && normalizedPrice > 0;
 	const partName = product?.category?.title || 'part';
+	const selectedTrimId = String(product?.trim?._id || '');
 
 	useEffect(() => {
 		let cancelled = false;
@@ -71,6 +85,51 @@ export default function ProductDetail() {
 			cancelled = true;
 		};
 	}, [productId, initialProduct]);
+
+	useEffect(() => {
+		let cancelled = false;
+
+		async function loadTrimOptions() {
+			const partId = String(product?.category?._id || '').trim();
+			const makeId = String(product?.subCategory?._id || '').trim();
+			const modelId = String(product?.model?._id || '').trim();
+			const yearId = String(product?.year?._id || '').trim();
+
+			if (!partId || !makeId || !modelId || !yearId) {
+				setTrimOptions([]);
+				return;
+			}
+
+			try {
+				const { data } = await api.get(`/parts/${partId}?make=${encodeURIComponent(makeId)}&model=${encodeURIComponent(modelId)}&year=${encodeURIComponent(yearId)}`);
+				if (!cancelled) {
+					setTrimOptions(Array.isArray(data?.data?.trims) ? data.data.trims : []);
+				}
+			} catch {
+				if (!cancelled) {
+					setTrimOptions([]);
+				}
+			}
+		}
+
+		if (product) {
+			loadTrimOptions();
+		}
+
+		return () => {
+			cancelled = true;
+		};
+	}, [product]);
+
+	const handleTrimClick = (trimId) => {
+		const nextTrimId = String(trimId || '').trim();
+		if (!nextTrimId || nextTrimId === selectedTrimId) return;
+
+		const nextProductId = buildSyntheticProductId(product, nextTrimId);
+		if (!nextProductId) return;
+
+		navigate(`/product/${nextProductId}`);
+	};
 
 	return (
 		<div className="font-['Barlow',sans-serif]">
@@ -157,6 +216,39 @@ export default function ProductDetail() {
 										<p><span className="font-black tracking-wide uppercase text-neutral-400">📅 Year:</span> <span className="font-semibold text-neutral-900">{product.year?.title || '-'}</span></p>
 										<p><span className="font-black tracking-wide uppercase text-neutral-400">🔍 Spec:</span> <span className="font-semibold text-neutral-900">{product.trim?.title || '-'}</span></p>
 									</div>
+
+									{trimOptions.length > 0 ? (
+										<div className="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-4">
+											<div className="block text-[11px] font-black tracking-widest uppercase text-neutral-500 mb-3">
+												Other Trims
+											</div>
+											<div className="flex flex-wrap gap-2">
+												{trimOptions.map((trim) => {
+													const nextProductId = buildSyntheticProductId(product, trim._id);
+													const isActive = String(trim._id) === selectedTrimId;
+													const content = (
+														<span className={`inline-flex items-center rounded-full border px-3 py-2 text-[11px] font-black tracking-widest uppercase transition-colors ${isActive ? 'border-amber-400 bg-amber-400 text-neutral-900' : 'border-neutral-300 bg-white text-neutral-700 hover:border-amber-400 hover:text-amber-600'}`}>
+															{trim.title}
+														</span>
+													);
+
+													if (!nextProductId) {
+														return <span key={trim._id}>{content}</span>;
+													}
+
+													return isActive ? (
+														<button key={trim._id} type="button" disabled className="cursor-default">
+															{content}
+														</button>
+													) : (
+														<button key={trim._id} type="button" onClick={() => handleTrimClick(trim._id)} className="cursor-pointer">
+															{content}
+														</button>
+													);
+												})}
+											</div>
+										</div>
+									) : null}
 
 									{hasPrice ? (
 										<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
