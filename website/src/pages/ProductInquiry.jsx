@@ -52,6 +52,15 @@ export default function ProductInquiry() {
 
 	const isMongoObjectId = (value) => typeof value === 'string' && /^[a-f\d]{24}$/i.test(value);
 
+	const trackLead = () => {
+		if (typeof window !== 'undefined' && typeof window.fbq === 'function') {
+			window.fbq('track', 'Lead', {
+				content_name: product?.name || 'Request a Part',
+				content_category: isQuoteMode ? 'Quote Request' : 'Call Now Request',
+			});
+		}
+	};
+
 	useEffect(() => {
 		let cancelled = false;
 
@@ -122,11 +131,13 @@ export default function ProductInquiry() {
 			});
 
 			if (isQuoteMode) {
+				trackLead();
 				setSuccess(`Quote request submitted successfully. Order #${data?.data?.orderNumber || ''}`.trim());
 				setForm(EMPTY_FORM);
 				return;
 			}
 
+			trackLead();
 			const redirectUrl = data?.data?.whatsappUrl;
 			if (!redirectUrl) throw new Error('Redirect URL is missing in response.');
 

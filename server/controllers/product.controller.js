@@ -28,6 +28,17 @@ const toTitleObject = (value) => {
 	return { _id: null, title: String(value) };
 };
 
+const normalizePriceValue = (value) => {
+	if (value === null || value === undefined || value === "") return 0;
+	if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+
+	const normalized = String(value).replace(/[^0-9.-]/g, "");
+	if (!normalized || normalized === "." || normalized === "-" || normalized === "-.") return 0;
+
+	const parsed = Number(normalized);
+	return Number.isFinite(parsed) ? parsed : 0;
+};
+
 function buildProjection(select) {
 	const fields = String(select || "")
 		.split(/\s+/)
@@ -121,6 +132,7 @@ async function hydrateVehicleRefs(products) {
 
 		return {
 			...item,
+			price: normalizePriceValue(item.price),
 			model: modelMap.get(modelId) || toTitleObject(item.model),
 			year: yearMap.get(yearId) || toTitleObject(item.year),
 			trim: trimMap.get(trimId) || toTitleObject(item.trim),
@@ -262,6 +274,12 @@ async function createProduct(req, res, next) {
 		if (!name || price === undefined || price === null || !category) {
 			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "name, price, and category are required.");
 		}
+
+		const normalizedPrice = normalizePriceValue(price);
+		if (normalizedPrice < 0) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "price must be greater than or equal to 0.");
+		}
+
 		const product = await Product.create({
 			name,
 			model: model || null,
@@ -269,7 +287,7 @@ async function createProduct(req, res, next) {
 			trim: trim || null,
 			featured: Boolean(featured),
 			image,
-			price,
+			price: normalizedPrice,
 			category,
 			subCategory: subCategory || null,
 		});
@@ -281,7 +299,15 @@ async function createProduct(req, res, next) {
 
 async function updateProduct(req, res, next) {
 	try {
-		const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+		const payload = { ...req.body };
+		if (Object.prototype.hasOwnProperty.call(payload, "price")) {
+			payload.price = normalizePriceValue(payload.price);
+			if (payload.price < 0) {
+				return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "price must be greater than or equal to 0.");
+			}
+		}
+
+		const product = await Product.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
 		if (!product) return sendJsonResponse(res, HTTP_STATUS_CODES.NOT_FOUND, false, "Product not found.");
 		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Product updated.", product);
 	} catch (err) {

@@ -7,8 +7,10 @@ import api from '../utils/api';
 import { resolveImageUrl } from '../utils/image';
 
 function formatCurrency(value) {
-	if (value === null || value === undefined || Number.isNaN(Number(value))) return '';
-	return Number(value).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+	if (value === null || value === undefined) return '';
+	const normalized = typeof value === 'number' ? value : Number(String(value).replace(/[^0-9.-]/g, ''));
+	if (!Number.isFinite(normalized)) return '';
+	return normalized.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
 const WHY_BUY_ITEMS = [
@@ -29,7 +31,11 @@ export default function ProductDetail() {
 	const [product, setProduct] = useState(initialProduct);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState('');
-	const hasPrice = Number(product?.price) > 0;
+	const normalizedPrice =
+		typeof product?.price === 'number'
+			? product.price
+			: Number(String(product?.price ?? '').replace(/[^0-9.-]/g, ''));
+	const hasPrice = Number.isFinite(normalizedPrice) && normalizedPrice > 0;
 	const partName = product?.category?.title || 'part';
 
 	useEffect(() => {
@@ -155,7 +161,7 @@ export default function ProductDetail() {
 									{hasPrice ? (
 										<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
 											<p className="text-[9px] font-bold tracking-widest uppercase text-amber-700">Price</p>
-											<p className="font-black text-lg text-neutral-900 mt-1">{formatCurrency(product.price)}</p>
+											<p className="font-black text-lg text-neutral-900 mt-1">{formatCurrency(normalizedPrice)}</p>
 										</div>
 									) : null}
 
