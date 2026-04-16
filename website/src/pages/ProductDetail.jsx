@@ -23,7 +23,7 @@ const WHY_BUY_ITEMS = [
 	'☎️ Support available before & after your purchase',
 ];
 
-const MILEAGE_PARTS = new Set(['engine', 'engines', 'transmission', 'transmissions']);
+const MILEAGE_PART_PATTERN = /\b(engine|transmission)s?\b/i;
 
 function buildSyntheticProductId(product, trimId) {
 	const partId = String(product?.category?._id || '').trim();
@@ -48,8 +48,8 @@ export default function ProductDetail() {
 	const [error, setError] = useState('');
 	const [selectedMileageBandKey, setSelectedMileageBandKey] = useState('');
 
-	const partKey = String(product?.category?.title || '').trim().toLowerCase();
-	const isMileagePart = MILEAGE_PARTS.has(partKey);
+	const partKey = String(product?.category?.title || '').trim();
+	const isMileagePart = MILEAGE_PART_PATTERN.test(partKey);
 	const mileageBands = useMemo(() => (Array.isArray(product?.mileageBands) ? product.mileageBands : []), [product?.mileageBands]);
 	const selectedMileageBand = useMemo(() => {
 		if (!mileageBands.length) return null;

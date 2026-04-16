@@ -7,6 +7,7 @@ const VehicleTrim = require("../models/VehicleTrim");
 const { sendJsonResponse } = require("../utils/helpers");
 
 const isValidId = (value) => mongoose.isValidObjectId(value);
+const LIVE_TRIM_PART_PATTERN = /\b(engine|transmission)s?\b/i;
 
 const getIdString = (value) => {
 	if (!value) return "";
@@ -15,8 +16,8 @@ const getIdString = (value) => {
 };
 
 function shouldFetchLiveTrims(partTitle) {
-	const key = String(partTitle || "").trim().toLowerCase();
-	return key === "engine" || key === "transmission";
+	const key = String(partTitle || "").trim();
+	return LIVE_TRIM_PART_PATTERN.test(key);
 }
 
 async function findByIdFlexible(EntityModel, id) {

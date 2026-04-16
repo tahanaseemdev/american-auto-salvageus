@@ -14,7 +14,7 @@ const STATIC_PRODUCT_PRICES = new Map([
 	["65f1a001c12d4a001a000016-69cfbed27b92a7441ac50baf-69cfbfd77b92a7441ac51b91-69cfbfea7b92a7441ac51cfa-927cea07235dc2ad97060ee2", 3536],
 ]);
 
-const MILEAGE_PRICED_PARTS = new Set(["engine", "engines", "transmission", "transmissions"]);
+const MILEAGE_PART_PATTERN = /\b(engine|transmission)s?\b/i;
 
 const isValidId = (value) => mongoose.isValidObjectId(value);
 
@@ -42,8 +42,8 @@ const normalizePriceValue = (value) => {
 };
 
 const isMileagePricedPart = (partTitle) => {
-	const key = String(partTitle || "").trim().toLowerCase();
-	return MILEAGE_PRICED_PARTS.has(key);
+	const key = String(partTitle || "").trim();
+	return MILEAGE_PART_PATTERN.test(key);
 };
 
 const normalizeMileageBands = (trimDoc) => {
