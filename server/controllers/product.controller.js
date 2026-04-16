@@ -86,12 +86,16 @@ async function buildSyntheticProductById(syntheticId) {
 		findByIdFlexible(VehicleMake, parsed.makeId, "name"),
 		findByIdFlexible(VehicleModel, parsed.modelId, "title"),
 		parsed.yearId ? findByIdFlexible(VehicleYear, parsed.yearId, "title") : null,
-		parsed.trimId ? findByIdFlexible(VehicleTrim, parsed.trimId, "title") : null,
+		parsed.trimId ? findByIdFlexible(VehicleTrim, parsed.trimId, "title price") : null,
 	]);
 
 	if (!part || !make || !model) return null;
 
 	const name = [year?.title, make?.name, model?.title, part?.title, trim?.title].filter(Boolean).join(" ");
+	const syntheticFallbackPrice = STATIC_PRODUCT_PRICES.get(String(syntheticId)) || 0;
+	const resolvedPrice = trim?.price !== undefined && trim?.price !== null
+		? normalizePriceValue(trim.price)
+		: syntheticFallbackPrice;
 
 	return {
 		_id: String(syntheticId),
@@ -101,7 +105,7 @@ async function buildSyntheticProductById(syntheticId) {
 		trim: trim || null,
 		featured: false,
 		image: part?.image || "",
-		price: STATIC_PRODUCT_PRICES.get(String(syntheticId)) || 0,
+		price: resolvedPrice,
 		category: part ? { _id: String(part._id), title: part.title } : null,
 		subCategory: make ? { _id: String(make._id), name: make.name } : null,
 		synthetic: true,
