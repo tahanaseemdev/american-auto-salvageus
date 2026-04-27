@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { BiLock, BiUser, BiEnvelope, BiPhone, BiMap } from 'react-icons/bi';
+import { BiLock, BiUser, BiEnvelope, BiPhone, BiMap, BiCookie } from 'react-icons/bi';
 import { IoShieldCheckmark } from "react-icons/io5";
 import { HiSparkles } from 'react-icons/hi';
 
@@ -25,7 +25,7 @@ function Section({ icon, title, children }) {
     <Reveal>
       <div className="bg-white border border-neutral-200 rounded-2xl overflow-hidden mb-5">
         <div className="flex items-center gap-3 px-6 py-4 border-b border-neutral-100 bg-neutral-50">
-          <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
             {icon}
           </div>
           <h2 className="font-['Barlow_Condensed',sans-serif] font-black text-lg uppercase text-neutral-900">{title}</h2>
@@ -43,7 +43,7 @@ function BulletList({ items }) {
     <ul className="space-y-2">
       {items.map((item, i) => (
         <li key={i} className="flex items-start gap-2.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mt-1.5 shrink-0" />
           <span>{item}</span>
         </li>
       ))}
@@ -70,9 +70,9 @@ export default function PrivacyPolicy() {
               Privacy <span className="text-amber-400">Policy</span>
             </h1>
             <p className="text-neutral-400 max-w-xl">
-              At American Auto Salvageus, we respect your privacy and are committed to protecting your personal information.
+              This policy explains how American Auto Salvageus collects, uses, and protects information when you use our website and services.
             </p>
-            <p className="text-neutral-500 text-xs font-semibold tracking-wide mt-4">Last updated: January 2025</p>
+            <p className="text-neutral-500 text-xs font-semibold tracking-wide mt-4">Last updated: April 2026</p>
           </Reveal>
         </div>
       </section>
@@ -82,64 +82,64 @@ export default function PrivacyPolicy() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
 
           <Section icon={<BiUser size={16} className="text-amber-500" />} title="Information We Collect">
-            <p>We collect personal information you provide to us when using our services, including but not limited to:</p>
+            <p>We may collect information you provide directly to us, information collected automatically, and information received from third parties when needed to support your request or order.</p>
             <BulletList items={[
-              'Contact information: name, email address, phone number, and mailing address',
-              'Vehicle information: make, model, year, and VIN (Vehicle Identification Number)',
-              'Payment information: credit card details, billing address, and transaction history',
-              'Order and service history: parts purchased, warranties claimed, and support interactions',
+              'Contact details such as name, email address, phone number, and mailing address',
+              'Order details, vehicle information, and part preferences shared through forms or support channels',
+              'Usage data such as browser type, pages viewed, referring pages, IP address, and session activity',
             ]} />
           </Section>
 
           <Section icon={<IoShieldCheckmark size={16} className="text-amber-500" />} title="How We Use Your Information">
             <BulletList items={[
-              'Process transactions, fulfill orders, and provide the services you request',
-              'Communicate with you about your account, active orders, and support requests',
-              'Improve our services, product catalog, and overall customer experience',
-              'Send promotional offers, newsletters, and product updates (you may opt out at any time)',
-              'Comply with legal requirements, industry standards, and regulatory obligations',
-              'Detect and prevent fraudulent transactions and unauthorized access',
+              'Provide, operate, and maintain our website and services',
+              'Respond to inquiries, quote requests, and support messages',
+              'Improve our website, products, customer experience, and marketing',
+              'Send order updates, service notifications, and other important communications',
+              'Detect fraud, prevent misuse, and comply with applicable laws and business obligations',
             ]} />
           </Section>
 
           <Section icon={<BiLock size={16} className="text-amber-500" />} title="How We Protect Your Information">
-            <p>We take the security of your personal information seriously and implement industry-standard safeguards:</p>
+            <p>We use reasonable administrative, technical, and physical safeguards designed to protect the information we handle.</p>
             <BulletList items={[
-              'Secure, encrypted servers and databases with restricted physical and digital access',
-              'SSL/TLS encryption for all data transmitted between your browser and our servers',
-              'Access controls limiting data visibility to authorized personnel only',
-              'Regular security audits, penetration testing, and vulnerability assessments',
-              'Employee training on data privacy best practices and security protocols',
+              'Limited access to sensitive data on a need-to-know basis',
+              'Secure transmission methods where available',
+              'Ongoing review of systems and processes to help reduce unauthorized access',
             ]} />
           </Section>
 
           <Section icon={<BiUser size={16} className="text-amber-500" />} title="Sharing Your Information">
-            <p>We handle your personal data with care and discretion:</p>
+            <p>We do not sell personal information. We may share information only when necessary to run our business or meet legal requirements.</p>
             <BulletList items={[
-              'We do not sell, rent, or trade your personal information to third-party marketers',
-              'We may share data with trusted service providers (e.g., shipping carriers, payment processors) strictly for fulfilling your order',
-              'Partners and vendors only receive the minimum data necessary for their designated business function',
-              'We may disclose information in response to valid legal processes, court orders, or government requests',
-              'In the event of a merger or acquisition, user data may be transferred as part of business assets — you will be notified',
+              'Service providers that help us process payments, ship orders, host systems, or support our operations',
+              'Professional advisors, regulators, or law enforcement when required by law',
+              'Business partners only when needed to complete a service you requested',
             ]} />
           </Section>
 
-          <Section icon={<BiUser size={16} className="text-amber-500" />} title="Your Rights">
-            <p>You have the following rights regarding your personal information:</p>
+          <Section icon={<BiCookie size={16} className="text-amber-500" />} title="Cookies and Log Data">
+            <p>Like most websites, we use cookies and similar technologies to remember preferences, understand traffic, and improve site performance.</p>
             <BulletList items={[
-              'Access and review the personal information we hold about you',
-              'Request corrections to inaccurate or incomplete information',
-              'Opt out of marketing communications at any time via the unsubscribe link in emails or by contacting us',
-              'Request deletion of your personal data (subject to applicable legal and operational requirements)',
-              'Lodge a complaint with a supervisory authority if you believe your rights have been violated',
+              'Browser type, internet service provider, date and time, referring pages, and click activity may be logged for analytics and security',
+              'Cookies may be used to personalize content and improve your browsing experience',
+              'You can disable cookies in your browser, though some site features may not work as intended',
+            ]} />
+          </Section>
+
+          <Section icon={<BiUser size={16} className="text-amber-500" />} title="Children's Privacy">
+            <BulletList items={[
+              'Our website is not directed to children under 13',
+              'We do not knowingly collect personal information from children under 13',
+              'If you believe a child has provided personal information to us, contact us so we can review and remove it where appropriate',
             ]} />
           </Section>
 
           <Section icon={<IoShieldCheckmark size={16} className="text-amber-500" />} title="Changes to This Policy">
             <BulletList items={[
-              'We may update this Privacy Policy periodically to reflect changes in our practices or legal requirements',
-              'Material changes will be communicated via a notice on our website or by email',
-              'Your continued use of our services after changes are posted constitutes acceptance of the updated policy',
+              'We may update this Privacy Policy from time to time',
+              'Changes will appear on this page with a revised effective date when appropriate',
+              'Your continued use of the website after changes are posted means you accept the updated policy',
             ]} />
           </Section>
 
@@ -150,7 +150,7 @@ export default function PrivacyPolicy() {
                 <span className="w-4 h-0.5 bg-amber-400 inline-block" /> Contact Us
               </h2>
               <p className="text-neutral-400 text-sm mb-5">
-                If you have questions, concerns, or requests related to this Privacy Policy, please reach out to our team:
+                If you have questions, concerns, or requests related to this Privacy Policy, please reach out to our team.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[

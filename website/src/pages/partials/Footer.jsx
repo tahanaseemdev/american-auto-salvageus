@@ -19,6 +19,13 @@ const helpLinks = [
 	{ label: 'Contact Us', href: '/contact' },
 ];
 
+const usefulLinks = [
+	{ label: 'Privacy Policy', href: '/privacy' },
+	{ label: 'Disclaimer', href: '/disclaimer' },
+	{ label: 'Terms of Use', href: '/terms' },
+	{ label: 'Contact Us', href: '/contact' },
+];
+
 const contactItems = [
 	{
 		icon: BiMap, text: '30 N Gould St Ste R Sheridan, WY 82801', href: null
@@ -65,8 +72,8 @@ export default function Footer() {
 				<div className="max-w-6xl mx-auto px-4 sm:px-6 pt-14 pb-10">
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10">
 
-						{/* Brand — spans 4 cols */}
-						<div className="lg:col-span-4 flex flex-col gap-5">
+						{/* Brand — spans 3 cols */}
+						<div className="lg:col-span-3 flex flex-col gap-5">
 							{/* Logo */}
 							<Link to="/" className="flex items-center self-start focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:ring-offset-2 focus:ring-offset-neutral-950 rounded">
 								<img
@@ -122,8 +129,23 @@ export default function Footer() {
 							</ul>
 						</div>
 
-						{/* Contact — spans 4 cols */}
-						<div className="lg:col-span-4">
+						{/* Useful Links — spans 2 cols */}
+						<div className="lg:col-span-2">
+							<h4 className="font-barlow-condensed font-black text-sm tracking-[0.14em] uppercase text-white mb-5 flex items-center gap-2">
+								<span className="w-4 h-0.5 bg-amber-400 rounded" />
+								Useful Links
+							</h4>
+							<ul className="space-y-2.5">
+								{usefulLinks.map(({ label, href }) => (
+									<li key={label}>
+										<Link to={href} className="footer-link text-sm text-neutral-500 inline-block">{label}</Link>
+									</li>
+								))}
+							</ul>
+						</div>
+
+						{/* Contact — spans 3 cols */}
+						<div className="lg:col-span-3">
 							<h4 className="font-barlow-condensed font-black text-sm tracking-[0.14em] uppercase text-white mb-5 flex items-center gap-2">
 								<span className="w-4 h-0.5 bg-amber-400 rounded" />
 								Contact
