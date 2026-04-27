@@ -14,6 +14,8 @@ import Dashboard from "./pages/Dashboard";
 import Contact from "./pages/Contact";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Returns from "./pages/Returns";
+import Disclaimer from "./pages/Disclaimer";
+import TermsOfUse from "./pages/TermsOfUse";
 import ProductDetail from "./pages/ProductDetail";
 import ProductInquiry from "./pages/ProductInquiry";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -75,6 +77,9 @@ function AppInner() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/disclaimer" element={<Disclaimer />} />
+        <Route path="/terms" element={<TermsOfUse />} />
+        <Route path="/terms-and-conditions" element={<TermsOfUse />} />
         <Route path="/returns" element={<Returns />} />
       </Routes>
 
