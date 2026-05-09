@@ -129,7 +129,7 @@ export default function TermsOfUse() {
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 								{[
 									{ icon: <BiMap size={15} className="text-amber-400" />, label: 'Address', value: '30 N Gould St Ste R\nSheridan, WY 82801' },
-									{ icon: <BiPhone size={15} className="text-amber-400" />, label: 'Phone', value: '+1-866-206-9163', href: 'tel:+1-866-206-9163' },
+									{ icon: <BiPhone size={15} className="text-amber-400" />, label: 'Phone', value: '1-(800) 805-5708', href: 'tel:+18008055708' },
 									{ icon: <BiEnvelope size={15} className="text-amber-400" />, label: 'Email', value: 'info@americanautosalvageus.com', href: 'mailto:info@americanautosalvageus.com' },
 								].map(item => (
 									<div key={item.label} className="bg-neutral-800/60 border border-white/5 rounded-xl px-4 py-3">

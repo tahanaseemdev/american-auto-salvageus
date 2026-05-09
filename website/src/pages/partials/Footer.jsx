@@ -30,7 +30,7 @@ const contactItems = [
 	{
 		icon: BiMap, text: '30 N Gould St Ste R Sheridan, WY 82801', href: null
 	},
-	{ icon: BiPhone, text: '+1-866-206-9163', href: '+1-866-206-9163' },
+	{ icon: BiPhone, text: '1-(800) 805-5708', href: 'tel:+18008055708' },
 	{ icon: BiEnvelope, text: 'info@americanautosalvageus.com', href: 'mailto:info@americanautosalvageus.com' },
 ];
 

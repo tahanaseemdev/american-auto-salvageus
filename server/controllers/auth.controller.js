@@ -6,6 +6,8 @@ const nodemailer = require("nodemailer");
 const User = require("../models/User");
 const { sendJsonResponse } = require("../utils/helpers");
 
+const DEFAULT_EMAIL_SENDER_NAME = "American Auto Salvage";
+
 const COOKIE_OPTIONS = {
 	httpOnly: true,
 	sameSite: "lax",
@@ -79,7 +81,7 @@ async function sendResetPasswordEmail(toEmail, resetLink, expiryMinutes) {
 	const transport = createMailerTransport();
 	if (!transport) return false;
 
-	const senderName = process.env.EMAIL_SENDER_NAME || process.env.SMTP_SENDER_NAME;
+	const senderName = process.env.EMAIL_SENDER_NAME || process.env.SMTP_SENDER_NAME || DEFAULT_EMAIL_SENDER_NAME;
 	const senderEmail = process.env.SMTP_FROM || process.env.EMAIL_SENDER || process.env.SMTP_USER;
 	const from = senderName ? `"${senderName}" <${senderEmail}>` : senderEmail;
 	await transport.sendMail({

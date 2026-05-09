@@ -827,7 +827,7 @@ export default function Home() {
 									className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white font-black text-[12px] tracking-widest uppercase px-7 py-4 rounded-xl transition-colors">
 									Contact Us <BiRightArrowAlt size={18} />
 								</motion.a>
-								<motion.a href="tel:+1-866-206-9163" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
+								<motion.a href="tel:+18008055708" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
 									className="inline-flex items-center gap-2 bg-white/50 hover:bg-white text-neutral-900 font-black text-[12px] tracking-widest uppercase px-7 py-4 rounded-xl transition-all border border-neutral-900/10">
 									Call Now
 								</motion.a>

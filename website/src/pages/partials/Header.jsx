@@ -44,8 +44,8 @@ export default function Header() {
 		<header className="fixed top-0 left-0 right-0 z-50">
 			{/* Topbar */}
 			<div className="hidden md:flex bg-neutral-950 border-b border-white/5 py-2 px-8 justify-end items-center gap-8">
-				<a href="tel:+1-866-206-9163" className="flex items-center gap-2 text-neutral-500 hover:text-amber-400 transition-colors text-xs tracking-widest uppercase font-semibold">
-					<BiPhone size={13} /> +1-866-206-9163
+				<a href="tel:+18008055708" className="flex items-center gap-2 text-neutral-500 hover:text-amber-400 transition-colors text-xs tracking-widest uppercase font-semibold">
+					<BiPhone size={13} /> 1-(800) 805-5708
 				</a>
 				<a href="mailto:info@americanautosalvageus.com" className="flex items-center gap-2 text-neutral-500 hover:text-amber-400 transition-colors text-xs tracking-widest uppercase font-semibold">
 					<BiEnvelope size={13} /> info@americanautosalvageus.com

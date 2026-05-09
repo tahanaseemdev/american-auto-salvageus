@@ -86,9 +86,9 @@ export default function Contact() {
           {/* Quick contact chips */}
           <Reveal delay={0.08}>
             <div className="flex flex-wrap gap-3 mt-8">
-              <a href="tel:+1-866-206-9163"
+              <a href="tel:+18008055708"
                 className="flex items-center gap-2 bg-neutral-900/60 border border-white/10 hover:border-amber-500/30 text-neutral-300 hover:text-amber-400 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
-                <BiPhone className="text-amber-400" /> +1-866-206-9163
+                <BiPhone className="text-amber-400" /> 1-(800) 805-5708
               </a>
               <a href="mailto:info@americanautosalvageus.com"
                 className="flex items-center gap-2 bg-neutral-900/60 border border-white/10 hover:border-amber-500/30 text-neutral-300 hover:text-amber-400 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all">
@@ -216,7 +216,7 @@ export default function Contact() {
                 </h2>
                 <div className="space-y-4">
                   {[
-                    { icon: <BiPhone size={16} className="text-amber-500" />, label: 'Phone', value: '+1-866-206-9163', href: 'tel:+1-866-206-9163' },
+                    { icon: <BiPhone size={16} className="text-amber-500" />, label: 'Phone', value: '1-(800) 805-5708', href: 'tel:+18008055708' },
                     { icon: <BiEnvelope size={16} className="text-amber-500" />, label: 'Email', value: 'info@americanautosalvageus.com', href: 'mailto:info@americanautosalvageus.com' },
                     { icon: <BiMapPin size={16} className="text-amber-500" />, label: 'Address', value: '1800 Auto Park Dr, Kansas City, MO 64108', href: null },
                   ].map(item => (

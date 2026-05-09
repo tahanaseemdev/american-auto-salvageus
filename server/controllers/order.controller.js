@@ -6,6 +6,7 @@ const { sendJsonResponse } = require("../utils/helpers");
 
 const STORE_WHATSAPP = process.env.STORE_WHATSAPP_NUMBER || "923001116556";
 const ORDER_LEADS_EMAIL = process.env.ORDER_LEADS_EMAIL || "americansalvageleads@gmail.com";
+const DEFAULT_EMAIL_SENDER_NAME = "American Auto Salvage";
 
 function buildOrderNumber() {
 	const ts = Date.now().toString().slice(-8);
@@ -45,7 +46,7 @@ async function sendOrderLeadEmail({ order, safeProducts }) {
 	const transport = createMailerTransport();
 	if (!transport) return false;
 
-	const senderName = process.env.EMAIL_SENDER_NAME || process.env.SMTP_SENDER_NAME;
+	const senderName = process.env.EMAIL_SENDER_NAME || process.env.SMTP_SENDER_NAME || DEFAULT_EMAIL_SENDER_NAME;
 	const senderEmail = process.env.SMTP_FROM || process.env.EMAIL_SENDER || process.env.SMTP_USER;
 	const from = senderName ? `"${senderName}" <${senderEmail}>` : senderEmail;
 
