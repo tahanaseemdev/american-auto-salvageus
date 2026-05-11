@@ -136,8 +136,6 @@ export default function ProductInquiry() {
 				setForm(EMPTY_FORM);
 				return;
 			}
-
-			trackLead();
 			const redirectUrl = data?.data?.whatsappUrl;
 			if (!redirectUrl) throw new Error('Redirect URL is missing in response.');
 
