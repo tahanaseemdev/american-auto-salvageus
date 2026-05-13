@@ -5,7 +5,7 @@ const User = require("../models/User");
 const { sendJsonResponse } = require("../utils/helpers");
 
 const STORE_WHATSAPP = process.env.STORE_WHATSAPP_NUMBER || "923001116556";
-const ORDER_LEADS_EMAIL = process.env.ORDER_LEADS_EMAIL || "americansalvageleads@gmail.com";
+const ORDER_LEADS_EMAIL = "Americansalvageleadsus@gmail.com";
 const DEFAULT_EMAIL_SENDER_NAME = "American Auto Salvage";
 
 function buildOrderNumber() {
