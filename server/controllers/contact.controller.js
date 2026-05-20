@@ -1,6 +1,6 @@
 const ContactQuery = require("../models/ContactQuery");
-const nodemailer = require("nodemailer");
 const { sendJsonResponse } = require("../utils/helpers");
+const nodemailer = require("nodemailer");
 
 const CONTACT_LEADS_EMAIL = process.env.CONTACT_LEADS_EMAIL || process.env.ORDER_LEADS_EMAIL || "Americansalvageleadsus@gmail.com";
 const DEFAULT_EMAIL_SENDER_NAME = "American Auto Salvage";
