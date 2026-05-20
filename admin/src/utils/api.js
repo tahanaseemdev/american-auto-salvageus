@@ -1,8 +1,20 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
+const resolvedBaseUrl = (() => {
+  const envUrl = String(import.meta.env.VITE_API_URL || '').trim();
+  if (envUrl) return envUrl;
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:5010/v1';
+  }
+
+  return '/v1';
+})();
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5010/v1',
+  baseURL: resolvedBaseUrl,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
