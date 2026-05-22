@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { BiEdit, BiTrash, BiLinkExternal } from "react-icons/bi";
+import { BiEdit, BiTrash } from "react-icons/bi";
 import { Button, Form, Modal, Nav, Tab } from "react-bootstrap";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { InputText } from "primereact/inputtext";
 import api from "../utils/api";
+import { sortPartsWithPriority } from "../utils/partSort";
 import { useAdminAuth } from "../context/AuthContext";
 
 const EMPTY_FORM = {
@@ -19,6 +20,12 @@ const EMPTY_FORM = {
 	priceSource: "",
 	mileageBandsJson: "[]",
 };
+
+const MILEAGE_PART_PATTERN = /\b(engine|transmission)s?\b/i;
+
+function isMileagePricedPart(partTitle) {
+	return MILEAGE_PART_PATTERN.test(String(partTitle || "").trim());
+}
 
 function formatPrice(value) {
 	if (value === null || value === undefined || value === "") return "—";
@@ -49,8 +56,8 @@ export default function ProductsPage() {
 	const [filterHint, setFilterHint] = useState("Select Part, Make, Model, or Year to load catalog products.");
 	const [lazyParams, setLazyParams] = useState({ first: 0, rows: 25, page: 1 });
 
-	const [legacyProducts, setLegacyProducts] = useState([]);
-	const [legacyLoading, setLegacyLoading] = useState(false);
+	const [manualProducts, setManualProducts] = useState([]);
+	const [manualLoading, setManualLoading] = useState(false);
 
 	const [showModal, setShowModal] = useState(false);
 	const [editingId, setEditingId] = useState("");
@@ -58,7 +65,9 @@ export default function ProductsPage() {
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
-		api.get("/categories").then(({ data }) => setParts(data.data || [])).catch(() => {});
+		api.get("/categories")
+			.then(({ data }) => setParts(sortPartsWithPriority(data.data || [])))
+			.catch(() => {});
 	}, []);
 
 	useEffect(() => {
@@ -131,20 +140,20 @@ export default function ProductsPage() {
 		if (activeTab === "catalog") fetchCatalog();
 	}, [activeTab, fetchCatalog]);
 
-	const fetchLegacy = async () => {
-		setLegacyLoading(true);
+	const fetchManualProducts = async () => {
+		setManualLoading(true);
 		try {
 			const { data } = await api.get("/products/admin/all?limit=100");
-			setLegacyProducts(data.data?.products || []);
+			setManualProducts(data.data?.products || []);
 		} catch {
-			setLegacyProducts([]);
+			setManualProducts([]);
 		} finally {
-			setLegacyLoading(false);
+			setManualLoading(false);
 		}
 	};
 
 	useEffect(() => {
-		if (activeTab === "legacy") fetchLegacy();
+		if (activeTab === "manual") fetchManualProducts();
 	}, [activeTab]);
 
 	const onFilterChange = (name, value) => {
@@ -320,19 +329,13 @@ export default function ProductsPage() {
 	const makeBody = (row) => row.make?.name || "—";
 	const modelBody = (row) => row.model?.title || "—";
 	const yearBody = (row) => row.year?.title || "—";
-	const priceBody = (row) => formatPrice(row.price);
+	const trimBody = (row) => row.title || "—";
+	const priceBody = (row) => (isMileagePricedPart(row.part?.title) ? formatPrice(row.price) : "—");
 	const mileageBody = (row) => {
+		if (!isMileagePricedPart(row.part?.title)) return "—";
 		const count = Array.isArray(row.mileageBands) ? row.mileageBands.length : 0;
 		return count > 0 ? `${count} band${count === 1 ? "" : "s"}` : "—";
 	};
-	const linkBody = (row) =>
-		row.productUrl ? (
-			<a href={row.productUrl} target="_blank" rel="noreferrer" className="admin-row-action">
-				<BiLinkExternal size={16} />
-			</a>
-		) : (
-			"—"
-		);
 	const actionsBody = (row) => (
 		<div className="d-flex align-items-center gap-2">
 			{canEdit && (
@@ -418,7 +421,7 @@ export default function ProductsPage() {
 						<Nav.Link eventKey="catalog" className="rounded-3">Catalog (trims)</Nav.Link>
 					</Nav.Item>
 					<Nav.Item>
-						<Nav.Link eventKey="legacy" className="rounded-3">Manual SKUs (legacy)</Nav.Link>
+						<Nav.Link eventKey="manual" className="rounded-3">Manual SKUs</Nav.Link>
 					</Nav.Item>
 				</Nav>
 
@@ -441,31 +444,30 @@ export default function ProductsPage() {
 								paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
 								emptyMessage={hasCatalogFilter ? "No trims found for this filter." : "Apply a filter to load products."}
 							>
-								<Column field="title" header="Trim / Product" style={{ minWidth: "220px" }} />
+								<Column header="Trim" body={trimBody} style={{ minWidth: "220px" }} />
 								<Column header="Part" body={partBody} />
 								<Column header="Make" body={makeBody} />
 								<Column header="Model" body={modelBody} />
 								<Column header="Year" body={yearBody} />
 								<Column header="Price" body={priceBody} />
 								<Column header="Mileage" body={mileageBody} />
-								<Column header="Link" body={linkBody} style={{ width: "70px" }} />
 								{canEdit && <Column header="Actions" body={actionsBody} style={{ width: "100px" }} />}
 							</DataTable>
 						</div>
 					</Tab.Pane>
 
-					<Tab.Pane eventKey="legacy">
+					<Tab.Pane eventKey="manual">
 						<p className="admin-subtle-text small mb-3">
-							Legacy manual products. Website shop primarily uses catalog trims; these remain for search and older orders.
+							Manual SKU products for search and special listings. Engine and Transmission entries are listed first.
 						</p>
 						<div className="admin-table-wrap">
 							<DataTable
-								value={legacyProducts}
-								loading={legacyLoading}
+								value={manualProducts}
+								loading={manualLoading}
 								paginator
 								rows={10}
 								className="admin-data-table"
-								emptyMessage="No legacy products."
+								emptyMessage="No manual products."
 							>
 								<Column field="name" header="Name" sortable />
 								<Column field="category.title" header="Part" />
@@ -526,35 +528,41 @@ export default function ProductsPage() {
 									</Form.Select>
 								</div>
 							</div>
-							<div className="row g-3 mb-3">
-								<div className="col-md-4">
-									<Form.Label>Price</Form.Label>
-									<Form.Control name="price" value={form.price} onChange={onFormChange} placeholder="e.g. 1165 or Get a quote" />
-								</div>
-								<div className="col-md-4">
-									<Form.Label>Product ID</Form.Label>
-									<Form.Control name="productId" value={form.productId} onChange={onFormChange} />
-								</div>
-								<div className="col-md-4">
-									<Form.Label>Price source</Form.Label>
-									<Form.Control name="priceSource" value={form.priceSource} onChange={onFormChange} />
-								</div>
-							</div>
-							<Form.Group className="mb-3">
-								<Form.Label>Product URL</Form.Label>
-								<Form.Control name="productUrl" value={form.productUrl} onChange={onFormChange} />
-							</Form.Group>
-							<Form.Group>
-								<Form.Label>Mileage bands (JSON array)</Form.Label>
-								<Form.Control
-									as="textarea"
-									rows={5}
-									name="mileageBandsJson"
-									value={form.mileageBandsJson}
-									onChange={onFormChange}
-									style={{ fontFamily: "monospace", fontSize: "12px" }}
-								/>
-							</Form.Group>
+							{(() => {
+								const selectedPart = parts.find((p) => String(p._id) === String(form.part));
+								const showMileageFields = isMileagePricedPart(selectedPart?.title);
+								return showMileageFields ? (
+									<>
+										<div className="row g-3 mb-3">
+											<div className="col-md-4">
+												<Form.Label>Price</Form.Label>
+												<Form.Control name="price" value={form.price} onChange={onFormChange} placeholder="e.g. 1165 or Get a quote" />
+											</div>
+											<div className="col-md-4">
+												<Form.Label>Product ID</Form.Label>
+												<Form.Control name="productId" value={form.productId} onChange={onFormChange} />
+											</div>
+											<div className="col-md-4">
+												<Form.Label>Price source</Form.Label>
+												<Form.Control name="priceSource" value={form.priceSource} onChange={onFormChange} />
+											</div>
+										</div>
+										<Form.Group>
+											<Form.Label>Mileage bands (JSON array)</Form.Label>
+											<Form.Control
+												as="textarea"
+												rows={5}
+												name="mileageBandsJson"
+												value={form.mileageBandsJson}
+												onChange={onFormChange}
+												style={{ fontFamily: "monospace", fontSize: "12px" }}
+											/>
+										</Form.Group>
+									</>
+								) : (
+									<p className="text-muted small mb-0">Price and mileage bands apply to Engine and Transmission parts only.</p>
+								);
+							})()}
 						</Modal.Body>
 						<Modal.Footer>
 							<Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>

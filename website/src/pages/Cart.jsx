@@ -5,6 +5,7 @@ import { HiSparkles } from 'react-icons/hi';
 import { IoShieldCheckmark } from "react-icons/io5";
 import { useCart } from '../context/CartContext';
 import { resolveImageUrl } from '../utils/image';
+import { formatProductPrice, getProductTrimTitle, isMileagePricedPart } from '../utils/parts';
 
 export default function Cart() {
   const { items, updateItem, removeItem, subtotal } = useCart();
@@ -15,8 +16,16 @@ export default function Cart() {
   // Normalise item shape from both logged-in (backend) and guest (local) formats
   const getProductId = (item) => item.product?._id || item.product?.id || String(item.id || '');
   const getProductName = (item) => item.product?.name || item.name || '';
-  const getProductPrice = (item) => item.product?.price || item.price || 0;
-  const getProductMiles = (item) => item.product?.mileage || item.miles || '';
+  const getProductPrice = (item) => {
+    const partTitle = item.product?.category?.title || '';
+    if (!isMileagePricedPart(partTitle)) return 0;
+    return item.product?.price || item.price || 0;
+  };
+  const getProductMiles = (item) => {
+    const partTitle = item.product?.category?.title || '';
+    if (!isMileagePricedPart(partTitle)) return '';
+    return item.product?.mileage || item.miles || '';
+  };
 
   const totalItemCount = items.reduce((sum, i) => sum + (i.quantity || 1), 0);
 
@@ -91,7 +100,12 @@ export default function Cart() {
                               <BiTrash size={17} />
                             </button>
                           </div>
-                          {miles && <p className="text-xs text-neutral-400 mt-0.5">{miles}</p>}
+                          {getProductTrimTitle(item.product) ? (
+                            <p className="text-xs text-neutral-500 mt-0.5">
+                              Trim: <span className="font-semibold text-neutral-700">{getProductTrimTitle(item.product)}</span>
+                            </p>
+                          ) : null}
+                          {miles ? <p className="text-xs text-neutral-400 mt-0.5">Mileage: {miles}</p> : null}
 
                           {/* Qty + Price */}
                           <div className="flex items-center justify-between mt-4">
@@ -107,11 +121,17 @@ export default function Cart() {
                               </button>
                             </div>
                             <div className="text-right">
-                              <span className="font-['Barlow_Condensed',sans-serif] font-black text-xl text-neutral-900">
-                                ${(price * qty).toLocaleString()}
-                              </span>
-                              {qty > 1 && (
-                                <div className="text-[11px] text-neutral-400">${price} each</div>
+                              {price > 0 ? (
+                                <>
+                                  <span className="font-['Barlow_Condensed',sans-serif] font-black text-xl text-neutral-900">
+                                    {formatProductPrice(price * qty) || `$${(price * qty).toLocaleString()}`}
+                                  </span>
+                                  {qty > 1 && (
+                                    <div className="text-[11px] text-neutral-400">{formatProductPrice(price) || `$${price}`} each</div>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-[11px] font-bold tracking-widest uppercase text-neutral-400">Quote</span>
                               )}
                             </div>
                           </div>

@@ -10,6 +10,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay } from 'swiper/modules';
 import api from '../utils/api';
 import { resolveImageUrl } from '../utils/image';
+import { formatProductPrice, isMileagePricedPart } from '../utils/parts';
 import 'swiper/css';
 /* ─── Animation Variants ─── */
 const fadeUp = {
@@ -602,10 +603,15 @@ export default function Home() {
 									</div>
 									<div className="p-5 flex flex-col grow">
 										<span className="inline-block mb-2 text-[10px] font-bold tracking-widest uppercase text-amber-500 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded self-start">
-											{part.tag} · Mileage Tiers
+											{part.tag}{isMileagePricedPart(part.tag) ? ' · Mileage Tiers' : ''}
 										</span>
-										<h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-4 grow">{part.title}</h3>
-										<div className="mb-4 text-sm font-black text-neutral-900">{formatMoney(part.price)}</div>
+										<h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-1 grow">{part.tag}</h3>
+										<p className="text-[11px] text-neutral-500 mb-3">
+											Trim: <span className="font-semibold text-neutral-700">{part.title}</span>
+										</p>
+										{isMileagePricedPart(part.tag) ? (
+											<div className="mb-4 text-sm font-black text-neutral-900">{formatProductPrice(part.price) || formatMoney(part.price)}</div>
+										) : null}
 										<div className="flex items-center justify-end mt-auto">
 											<motion.button
 												onClick={() => onViewDetails(part)}

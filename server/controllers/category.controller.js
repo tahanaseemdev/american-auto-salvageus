@@ -5,6 +5,7 @@ const VehicleModel = require("../models/VehicleModel");
 const VehicleYear = require("../models/VehicleYear");
 const VehicleTrim = require("../models/VehicleTrim");
 const { sendJsonResponse } = require("../utils/helpers");
+const { sortPartsByPriority } = require("../utils/partSort");
 
 const isValidId = (value) => mongoose.isValidObjectId(value);
 
@@ -39,11 +40,25 @@ function normalizePriceValue(value) {
 	return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function resolveSyntheticPrice(trimItem, partTitle) {
-	if (!trimItem) return 0;
+function isMileagePricedPart(partTitle) {
+	return LIVE_TRIM_PART_PATTERN.test(String(partTitle || "").trim());
+}
 
-	const mileagePriced = /\b(engine|transmission)s?\b/i.test(String(partTitle || ""));
-	if (mileagePriced && Array.isArray(trimItem.mileageBands) && trimItem.mileageBands.length > 0) {
+function withSyntheticMeta(product, partTitle) {
+	const mileagePriced = isMileagePricedPart(partTitle);
+	const trim = product?.trim;
+	return {
+		...product,
+		mileagePriced,
+		trimTitle: trim?.title || "",
+		mileageBands: mileagePriced && Array.isArray(trim?.mileageBands) ? trim.mileageBands : [],
+	};
+}
+
+function resolveSyntheticPrice(trimItem, partTitle) {
+	if (!trimItem || !isMileagePricedPart(partTitle)) return 0;
+
+	if (Array.isArray(trimItem.mileageBands) && trimItem.mileageBands.length > 0) {
 		const band =
 			trimItem.mileageBands.find((entry) => entry?.selected) ||
 			trimItem.mileageBands.find((entry) => normalizePriceValue(entry?.amount ?? entry?.price) > 0) ||
@@ -597,7 +612,7 @@ async function getAllCategories(req, res, next) {
 		const { featured } = req.query;
 		const filter = {};
 		if (featured !== undefined) filter.featured = String(featured).toLowerCase() === "true";
-		const categories = await VehiclePart.find(filter).sort({ createdAt: -1 }).lean();
+		const categories = sortPartsByPriority(await VehiclePart.find(filter).lean());
 		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Parts fetched.", categories);
 	} catch (err) {
 		next(err);
@@ -698,7 +713,7 @@ async function getCategoryDetail(req, res, next) {
 				page,
 				limit,
 			});
-			syntheticProducts = paged.products;
+			syntheticProducts = paged.products.map((product) => withSyntheticMeta(product, category?.title));
 			pagination = {
 				page: paged.page,
 				limit: paged.limit,
@@ -719,7 +734,7 @@ async function getCategoryDetail(req, res, next) {
 				trims,
 				allYears,
 				allTrims,
-			});
+			}).map((product) => withSyntheticMeta(product, category?.title));
 			pagination = {
 				page: 1,
 				limit: syntheticProducts.length || limit,
@@ -747,7 +762,7 @@ async function adminGetAll(req, res, next) {
 		const { featured } = req.query;
 		const filter = {};
 		if (featured !== undefined) filter.featured = String(featured).toLowerCase() === "true";
-		const categories = await VehiclePart.find(filter).sort({ createdAt: -1 }).lean();
+		const categories = sortPartsByPriority(await VehiclePart.find(filter).lean());
 		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Parts fetched.", categories);
 	} catch (err) {
 		next(err);

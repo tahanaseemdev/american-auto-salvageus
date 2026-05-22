@@ -7,6 +7,7 @@ const VehicleYear = require("../models/VehicleYear");
 const VehicleTrim = require("../models/VehicleTrim");
 const { sendJsonResponse } = require("../utils/helpers");
 const { findByIds } = require("../utils/flexibleDb");
+const { sortManualProductsByPartPriority } = require("../utils/partSort");
 
 const STATIC_PRODUCT_PRICES = new Map([
 	["65f1a001c12d4a001a000016-69cfbed27b92a7441ac50bd3-69cfc2df7b92a7441ac54130-69cfc2fc7b92a7441ac541c6-911800663e091e76169d5282", 1165],
@@ -154,11 +155,13 @@ async function buildSyntheticProductById(syntheticId, { mileageBandKey } = {}) {
 	const rawMileageBands = mileagePriced ? normalizeMileageBands(trim) : [];
 	const { mileageBands, selectedMileageBand } = resolveSelectedMileageBand(rawMileageBands, mileageBandKey);
 	const syntheticFallbackPrice = STATIC_PRODUCT_PRICES.get(String(syntheticId)) || 0;
-	const resolvedPrice = selectedMileageBand
-		? normalizePriceValue(selectedMileageBand.amount)
-		: trim?.price !== undefined && trim?.price !== null
-			? normalizePriceValue(trim.price)
-			: syntheticFallbackPrice;
+	const resolvedPrice = mileagePriced
+		? selectedMileageBand
+			? normalizePriceValue(selectedMileageBand.amount)
+			: trim?.price !== undefined && trim?.price !== null
+				? normalizePriceValue(trim.price)
+				: syntheticFallbackPrice
+		: 0;
 
 	return {
 		_id: String(syntheticId),
@@ -166,6 +169,7 @@ async function buildSyntheticProductById(syntheticId, { mileageBandKey } = {}) {
 		model: model || null,
 		year: year || null,
 		trim: trim || null,
+		trimTitle: trim?.title || "",
 		featured: false,
 		image: part?.image || "",
 		price: resolvedPrice,
@@ -330,7 +334,7 @@ async function adminGetAll(req, res, next) {
 			Product.countDocuments(filter),
 		]);
 
-		const hydratedProducts = await hydrateVehicleRefs(products);
+		const hydratedProducts = sortManualProductsByPartPriority(await hydrateVehicleRefs(products));
 
 		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Products fetched.", {
 			products: hydratedProducts,

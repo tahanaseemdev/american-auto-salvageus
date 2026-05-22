@@ -6,6 +6,12 @@ import { IoShieldCheckmark, IoGridOutline } from 'react-icons/io5';
 import { HiSparkles } from 'react-icons/hi';
 import api from '../utils/api';
 import { resolveImageUrl } from '../utils/image';
+import {
+	formatProductPrice,
+	getProductMileageLabel,
+	getProductTrimTitle,
+	isMileagePricedPart,
+} from '../utils/parts';
 
 const PART_LEVEL_PAGE_SIZE = 24;
 const PRIORITY_PARTS = new Set(['engine', 'engines', 'transmission', 'transmissions']);
@@ -165,7 +171,20 @@ function ProductGrid({ products }) {
 					</div>
 
 					<div className="p-4 flex flex-col flex-1">
-						<h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-2 flex-1">{product.name}</h3>
+						<h3 className="text-sm font-semibold text-neutral-800 leading-snug mb-1">{product.name}</h3>
+						<p className="text-[11px] font-bold tracking-wide uppercase text-neutral-500 mb-2">
+							Trim: <span className="text-neutral-800 normal-case">{getProductTrimTitle(product) || '—'}</span>
+						</p>
+						{isMileagePricedPart(product?.category?.title) ? (
+							<div className="mb-3 space-y-1">
+								{formatProductPrice(product.price) ? (
+									<p className="text-sm font-black text-neutral-900">{formatProductPrice(product.price)}</p>
+								) : null}
+								{getProductMileageLabel(product) ? (
+									<p className="text-xs font-semibold text-neutral-500">Mileage: {getProductMileageLabel(product)}</p>
+								) : null}
+							</div>
+						) : null}
 
 						<div className="flex items-end justify-end mt-auto pt-3 border-t border-neutral-100">
 							<Link

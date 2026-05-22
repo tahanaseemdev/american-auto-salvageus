@@ -5,6 +5,11 @@ import { FaFileInvoiceDollar } from 'react-icons/fa';
 import { IoShieldCheckmark } from 'react-icons/io5';
 import api from '../utils/api';
 import { resolveImageUrl } from '../utils/image';
+import {
+	formatProductPrice,
+	getProductTrimTitle,
+	isMileagePricedPart,
+} from '../utils/parts';
 
 function formatCurrency(value) {
 	if (value === null || value === undefined) return '';
@@ -22,8 +27,6 @@ const WHY_BUY_ITEMS = [
 	'📦 Securely packaged for safe transit',
 	'☎️ Support available before & after your purchase',
 ];
-
-const MILEAGE_PART_PATTERN = /\b(engine|transmission)s?\b/i;
 
 function buildSyntheticProductId(product, trimId) {
 	const partId = String(product?.category?._id || '').trim();
@@ -49,7 +52,8 @@ export default function ProductDetail() {
 	const [selectedMileageBandKey, setSelectedMileageBandKey] = useState('');
 
 	const partKey = String(product?.category?.title || '').trim();
-	const isMileagePart = MILEAGE_PART_PATTERN.test(partKey);
+	const isMileagePart = Boolean(product?.mileagePriced) || isMileagePricedPart(partKey);
+	const trimTitle = getProductTrimTitle(product);
 	const mileageBands = useMemo(() => (Array.isArray(product?.mileageBands) ? product.mileageBands : []), [product?.mileageBands]);
 	const selectedMileageBand = useMemo(() => {
 		if (!mileageBands.length) return null;
@@ -244,7 +248,7 @@ export default function ProductDetail() {
 										<p><span className="font-black tracking-wide uppercase text-neutral-400">🚗 Make:</span> <span className="font-semibold text-neutral-900">{product.subCategory?.name || '-'}</span></p>
 										<p><span className="font-black tracking-wide uppercase text-neutral-400">🚘 Model:</span> <span className="font-semibold text-neutral-900">{product.model?.title || '-'}</span></p>
 										<p><span className="font-black tracking-wide uppercase text-neutral-400">📅 Year:</span> <span className="font-semibold text-neutral-900">{product.year?.title || '-'}</span></p>
-										<p><span className="font-black tracking-wide uppercase text-neutral-400">🔍 Spec:</span> <span className="font-semibold text-neutral-900">{product.trim?.title || '-'}</span></p>
+										<p><span className="font-black tracking-wide uppercase text-neutral-400">🔧 Trim:</span> <span className="font-semibold text-neutral-900">{trimTitle || '—'}</span></p>
 									</div>
 
 									{isMileagePart && mileageBands.length > 0 ? (
@@ -300,12 +304,12 @@ export default function ProductDetail() {
 										</div>
 									) : null}
 
-									{hasPrice ? (
+									{isMileagePart && hasPrice ? (
 										<div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
 											<p className="text-[9px] font-bold tracking-widest uppercase text-amber-700">Price</p>
-											<p className="font-black text-lg text-neutral-900 mt-1">{formatCurrency(normalizedPrice)}</p>
+											<p className="font-black text-lg text-neutral-900 mt-1">{formatProductPrice(normalizedPrice) || formatCurrency(normalizedPrice)}</p>
 											{selectedMileageBand?.label ? (
-												<p className="text-xs font-semibold text-neutral-600 mt-1">{selectedMileageBand.label}</p>
+												<p className="text-xs font-semibold text-neutral-600 mt-1">Mileage: {selectedMileageBand.label}</p>
 											) : null}
 										</div>
 									) : null}

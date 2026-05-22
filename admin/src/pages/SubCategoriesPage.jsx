@@ -5,6 +5,7 @@ import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { InputText } from "primereact/inputtext";
 import api from "../utils/api";
+import { sortPartsWithPriority } from "../utils/partSort";
 import { useAdminAuth } from "../context/AuthContext";
 
 export default function SubCategoriesPage() {
@@ -21,7 +22,9 @@ export default function SubCategoriesPage() {
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
-		api.get("/categories").then(({ data }) => setParts(data.data || [])).catch(() => {});
+		api.get("/categories")
+			.then(({ data }) => setParts(sortPartsWithPriority(data.data || [])))
+			.catch(() => {});
 	}, []);
 
 	useEffect(() => {
