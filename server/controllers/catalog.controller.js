@@ -5,6 +5,7 @@ const VehicleTrim = require("../models/VehicleTrim");
 const VehiclePart = require("../models/VehiclePart");
 const VehicleMake = require("../models/VehicleMake");
 const { sendJsonResponse } = require("../utils/helpers");
+const { findByIds } = require("../utils/flexibleDb");
 
 function normalizeObjectIdValue(value) {
 	if (value === undefined || value === null || value === "") return null;
@@ -125,6 +126,19 @@ function buildCrudHandlers(EntityModel, options) {
 	};
 
 	const buildFindWithPopulate = async (filter, sort) => {
+		const useNativeCollection =
+			EntityModel === VehicleModel || EntityModel === VehicleYear || EntityModel === VehicleTrim;
+
+		if (useNativeCollection) {
+			let cursor = EntityModel.collection.find(filter);
+			if (sort) cursor = cursor.sort(sort);
+			const rows = await cursor.toArray();
+			if (foreignModel) {
+				return hydrateForeignField(rows, { field: parentField, model: foreignModel, select: foreignSelect });
+			}
+			return rows;
+		}
+
 		if (foreignModel) {
 			const rows = await EntityModel.find(filter).sort(sort).lean();
 			return hydrateForeignField(rows, { field: parentField, model: foreignModel, select: foreignSelect });
@@ -216,7 +230,15 @@ function buildCrudHandlers(EntityModel, options) {
 
 	const remove = async (req, res, next) => {
 		try {
-			await EntityModel.findByIdAndDelete(req.params.id);
+			if (EntityModel === VehicleTrim) {
+				const idQuery = buildTrimIdQuery(req.params.id);
+				if (!idQuery) {
+					return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid trim id.");
+				}
+				await VehicleTrim.collection.deleteOne(idQuery);
+			} else {
+				await EntityModel.findByIdAndDelete(req.params.id);
+			}
 			return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, `${label} deleted.`);
 		} catch (err) {
 			next(err);
@@ -313,7 +335,7 @@ trims.getAll = async (req, res, next) => {
 			yearIds = [yearId];
 		} else if (modelId) {
 			const modelFilter = buildFlexibleIdFilter("model", modelId);
-			const yearDocs = await VehicleYear.find(modelFilter).select("_id").lean();
+			const yearDocs = await VehicleYear.collection.find(modelFilter, { projection: { _id: 1 } }).toArray();
 			yearIds = yearDocs.map((item) => String(item._id));
 		}
 
@@ -346,6 +368,355 @@ trims.getAll = async (req, res, next) => {
 		});
 
 		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Trims fetched.", hydrated);
+	} catch (err) {
+		next(err);
+	}
+};
+
+function escapeRegex(value) {
+	return String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function buildTrimAdminFilter(query) {
+	const partId = normalizeObjectIdValue(query?.part || query?.category);
+	const makeId = normalizeObjectIdValue(query?.make || query?.subCategory);
+	const modelId = normalizeObjectIdValue(query?.model);
+	const yearId = normalizeObjectIdValue(query?.year);
+
+	if (partId === false || makeId === false || modelId === false || yearId === false) {
+		return { error: "Invalid filter id." };
+	}
+
+	const andFilters = [];
+
+	if (yearId) {
+		andFilters.push(buildFlexibleFieldMatch("year", yearId));
+		} else if (modelId) {
+			const modelFilter = buildFlexibleIdFilter("model", modelId);
+			const yearDocs = await VehicleYear.collection.find(modelFilter, { projection: { _id: 1 } }).toArray();
+			const yearIds = yearDocs.map((item) => String(item._id));
+		if (yearIds.length === 0) {
+			return { filter: { _id: null }, empty: true };
+		}
+		andFilters.push({ year: { $in: yearIds } });
+	}
+
+	if (partId) andFilters.push(buildFlexibleFieldMatch("part", partId));
+	if (makeId) andFilters.push(buildFlexibleFieldMatch("make", makeId));
+
+	if (andFilters.length === 0) return { filter: null, needsFilter: true };
+
+	return {
+		filter: andFilters.length === 1 ? andFilters[0] : { $and: andFilters },
+		needsFilter: false,
+		empty: false,
+	};
+}
+
+async function hydrateTrimAdminRows(rows) {
+	if (!Array.isArray(rows) || rows.length === 0) return [];
+
+	const partIds = [...new Set(rows.map((row) => String(row?.part || "").trim()).filter(Boolean))];
+	const makeIds = [...new Set(rows.map((row) => String(row?.make || "").trim()).filter(Boolean))];
+	const yearIds = [...new Set(rows.map((row) => String(row?.year || "").trim()).filter(Boolean))];
+
+	const [parts, makes, years] = await Promise.all([
+		findByIds(VehiclePart.collection, partIds, { title: 1 }),
+		findByIds(VehicleMake.collection, makeIds, { name: 1 }),
+		findByIds(VehicleYear.collection, yearIds, { title: 1, model: 1 }),
+	]);
+
+	const modelIds = [...new Set(years.map((year) => String(year?.model || "").trim()).filter(Boolean))];
+	const models = await findByIds(VehicleModel.collection, modelIds, { title: 1 });
+
+	const partMap = new Map(parts.map((doc) => [String(doc._id), doc]));
+	const makeMap = new Map(makes.map((doc) => [String(doc._id), doc]));
+	const yearMap = new Map(years.map((doc) => [String(doc._id), doc]));
+	const modelMap = new Map(models.map((doc) => [String(doc._id), doc]));
+
+	return rows.map((row) => {
+		const yearDoc = yearMap.get(String(row?.year || "")) || null;
+		const modelDoc = yearDoc ? modelMap.get(String(yearDoc.model || "")) || null : null;
+		const partDoc = partMap.get(String(row?.part || "")) || null;
+		const makeDoc = makeMap.get(String(row?.make || "")) || null;
+		return {
+			...row,
+			part: partDoc ? { _id: String(partDoc._id), title: partDoc.title } : null,
+			make: makeDoc ? { _id: String(makeDoc._id), name: makeDoc.name } : null,
+			year: yearDoc ? { _id: String(yearDoc._id), title: yearDoc.title } : null,
+			model: modelDoc ? { _id: String(modelDoc._id), title: modelDoc.title } : null,
+		};
+	});
+}
+
+function normalizeTrimPayload(body) {
+	const title = String(body?.title || "").trim();
+	const year = normalizeObjectIdValue(body?.year);
+	const make = normalizeObjectIdValue(body?.make || body?.subCategory);
+	const part = normalizeObjectIdValue(body?.part || body?.category);
+	const price = body?.price === undefined || body?.price === null ? "" : String(body.price);
+	const productUrl = String(body?.productUrl || "").trim();
+	const priceSource = String(body?.priceSource || "").trim();
+	let productId = body?.productId;
+	if (productId === "" || productId === undefined) productId = null;
+
+	let mileageBands = body?.mileageBands;
+	if (typeof mileageBands === "string") {
+		try {
+			mileageBands = JSON.parse(mileageBands);
+		} catch {
+			mileageBands = [];
+		}
+	}
+	if (!Array.isArray(mileageBands)) mileageBands = [];
+
+	return { title, year, make, part, price, mileageBands, productUrl, priceSource, productId };
+}
+
+trims.getAdminPaginated = async (req, res, next) => {
+	try {
+		const q = String(req.query?.q || "").trim();
+		const parsedPage = Number.parseInt(req.query.page, 10);
+		const parsedLimit = Number.parseInt(req.query.limit, 10);
+		const page = Number.isFinite(parsedPage) ? Math.max(1, parsedPage) : 1;
+		const limit = Number.isFinite(parsedLimit) ? Math.max(1, Math.min(100, parsedLimit)) : 25;
+		const skip = (page - 1) * limit;
+
+		const built = await buildTrimAdminFilter(req.query);
+		if (built.error) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, built.error);
+		}
+		if (built.needsFilter && q.length < 2) {
+			return sendJsonResponse(
+				res,
+				HTTP_STATUS_CODES.BAD_REQUEST,
+				false,
+				"Select Part, Make, Model, or Year — or enter at least 2 search characters."
+			);
+		}
+
+		const filter = built.filter || {};
+		if (q.length >= 2) {
+			filter.title = { $regex: escapeRegex(q), $options: "i" };
+		}
+
+		if (built.empty) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Catalog products fetched.", {
+				items: [],
+				pagination: { page, limit, total: 0, totalPages: 1 },
+			});
+		}
+
+		const pipeline = [
+			{ $match: filter },
+			{
+				$addFields: {
+					hasPricedMileage: {
+						$gt: [
+							{
+								$size: {
+									$filter: {
+										input: { $ifNull: ["$mileageBands", []] },
+										as: "band",
+										cond: {
+											$gt: [
+												{
+													$convert: {
+														input: { $ifNull: ["$$band.amount", 0] },
+														to: "double",
+														onError: 0,
+														onNull: 0,
+													},
+												},
+												0,
+											],
+										},
+									},
+								},
+							},
+							0,
+						],
+					},
+					priceText: { $toString: { $ifNull: ["$price", ""] } },
+				},
+			},
+			{
+				$addFields: {
+					hasNumericPrice: {
+						$gt: [
+							{
+								$convert: {
+									input: {
+										$let: {
+											vars: {
+												digits: {
+													$regexFind: {
+														input: "$priceText",
+														regex: "[0-9]+(?:\\.[0-9]+)?",
+													},
+												},
+											},
+											in: { $ifNull: ["$$digits.match", "0"] },
+										},
+									},
+									to: "double",
+									onError: 0,
+									onNull: 0,
+								},
+							},
+							0,
+						],
+					},
+				},
+			},
+			{
+				$addFields: {
+					priceSortRank: {
+						$cond: [
+							{
+								$or: [
+									"$hasPricedMileage",
+									{
+										$and: [
+											"$hasNumericPrice",
+											{
+												$not: {
+													$regexMatch: { input: "$priceText", regex: "get a quote", options: "i" },
+												},
+											},
+										],
+									},
+								],
+							},
+							0,
+							1,
+						],
+					},
+				},
+			},
+			{ $sort: { priceSortRank: 1, updatedAt: -1 } },
+			{ $skip: skip },
+			{ $limit: limit },
+			{ $project: { priceSortRank: 0, hasNumericPrice: 0, hasPricedMileage: 0, priceText: 0 } },
+		];
+
+		const [items, total] = await Promise.all([
+			VehicleTrim.collection.aggregate(pipeline).toArray(),
+			VehicleTrim.collection.countDocuments(filter),
+		]);
+
+		const hydrated = await hydrateTrimAdminRows(items);
+
+		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Catalog products fetched.", {
+			items: hydrated,
+			pagination: {
+				page,
+				limit,
+				total,
+				totalPages: Math.max(1, Math.ceil(total / limit)),
+			},
+		});
+	} catch (err) {
+		next(err);
+	}
+};
+
+function buildTrimIdQuery(rawId) {
+	const id = String(rawId || "").trim();
+	if (!id) return null;
+	return { _id: id };
+}
+
+trims.getOneAdmin = async (req, res, next) => {
+	try {
+		const idQuery = buildTrimIdQuery(req.params.id);
+		if (!idQuery) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid trim id.");
+		}
+		const item = await VehicleTrim.collection.findOne(idQuery);
+		if (!item) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.NOT_FOUND, false, "Catalog product not found.");
+		}
+		const [hydrated] = await hydrateTrimAdminRows([item]);
+		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Catalog product fetched.", hydrated);
+	} catch (err) {
+		next(err);
+	}
+};
+
+trims.createFull = async (req, res, next) => {
+	try {
+		const payload = normalizeTrimPayload(req.body);
+		if (payload.year === false || payload.make === false || payload.part === false) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid part, make, or year id.");
+		}
+		if (!payload.title || !payload.year) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "title and year are required.");
+		}
+
+		const doc = {
+			title: payload.title,
+			year: payload.year,
+			make: payload.make || null,
+			part: payload.part || null,
+			price: payload.price,
+			mileageBands: payload.mileageBands,
+			productId: payload.productId,
+			productUrl: payload.productUrl,
+			priceSource: payload.priceSource,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+		const insertResult = await VehicleTrim.collection.insertOne(doc);
+		const item = await VehicleTrim.collection.findOne({ _id: insertResult.insertedId });
+
+		const [hydrated] = await hydrateTrimAdminRows([item]);
+		return sendJsonResponse(res, HTTP_STATUS_CODES.CREATED, true, "Catalog product created.", hydrated);
+	} catch (err) {
+		next(err);
+	}
+};
+
+trims.updateFull = async (req, res, next) => {
+	try {
+		const payload = normalizeTrimPayload(req.body);
+		if (payload.year === false || payload.make === false || payload.part === false) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid part, make, or year id.");
+		}
+		if (!payload.title || !payload.year) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "title and year are required.");
+		}
+
+		const idQuery = buildTrimIdQuery(req.params.id);
+		if (!idQuery) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid trim id.");
+		}
+
+		const item = await VehicleTrim.collection.findOneAndUpdate(
+			idQuery,
+			{
+				$set: {
+					title: payload.title,
+					year: payload.year,
+					make: payload.make || null,
+					part: payload.part || null,
+					price: payload.price,
+					mileageBands: payload.mileageBands,
+					productId: payload.productId,
+					productUrl: payload.productUrl,
+					priceSource: payload.priceSource,
+					updatedAt: new Date(),
+				},
+			},
+			{ returnDocument: "after" }
+		);
+
+		if (!item) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.NOT_FOUND, false, "Catalog product not found.");
+		}
+
+		const [hydrated] = await hydrateTrimAdminRows([item]);
+		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Catalog product updated.", hydrated);
 	} catch (err) {
 		next(err);
 	}

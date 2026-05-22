@@ -1,9 +1,28 @@
 const mongoose = require("mongoose");
 
+const mileageBandSchema = new mongoose.Schema(
+	{
+		key: { type: String, default: "" },
+		label: { type: String, default: "" },
+		mileage: { type: String, default: "" },
+		price: { type: String, default: "" },
+		amount: { type: Number, default: 0 },
+		selected: { type: Boolean, default: false },
+	},
+	{ _id: false }
+);
+
 const vehicleTrimSchema = new mongoose.Schema(
 	{
 		title: { type: String, required: true, trim: true },
-		year: { type: mongoose.Schema.Types.ObjectId, ref: "VehicleYear", required: true },
+		year: { type: mongoose.Schema.Types.Mixed, required: true },
+		make: { type: mongoose.Schema.Types.Mixed, default: null },
+		part: { type: mongoose.Schema.Types.Mixed, default: null },
+		price: { type: String, default: "" },
+		mileageBands: { type: [mileageBandSchema], default: [] },
+		productId: { type: mongoose.Schema.Types.Mixed, default: null },
+		productUrl: { type: String, default: "" },
+		priceSource: { type: String, default: "" },
 	},
 	{ timestamps: true }
 );

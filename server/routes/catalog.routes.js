@@ -2,6 +2,7 @@ const router = require("express").Router();
 const { models, years, trims } = require("../controllers/catalog.controller");
 const { authenticate } = require("../middleware/auth");
 const checkPermission = require("../middleware/checkPermission");
+const { checkAnyPermission } = require("../middleware/checkPermission");
 
 router.get("/models", models.getAll);
 router.get("/years", years.getAll);
@@ -17,9 +18,12 @@ router.post("/years", authenticate, checkPermission("edit_years"), years.create)
 router.put("/years/:id", authenticate, checkPermission("edit_years"), years.update);
 router.delete("/years/:id", authenticate, checkPermission("edit_years"), years.remove);
 
+router.get("/trims/admin/list", authenticate, checkAnyPermission("view_products", "view_trims"), trims.getAdminPaginated);
 router.get("/trims/admin/all", authenticate, checkPermission("view_trims"), trims.getAllAdmin);
-router.post("/trims", authenticate, checkPermission("edit_trims"), trims.create);
-router.put("/trims/:id", authenticate, checkPermission("edit_trims"), trims.update);
-router.delete("/trims/:id", authenticate, checkPermission("edit_trims"), trims.remove);
+router.get("/trims/admin/:id", authenticate, checkAnyPermission("view_products", "view_trims"), trims.getOneAdmin);
+router.get("/trims/:id", authenticate, checkAnyPermission("view_products", "view_trims"), trims.getOneAdmin);
+router.post("/trims", authenticate, checkAnyPermission("edit_products", "edit_trims"), trims.createFull);
+router.put("/trims/:id", authenticate, checkAnyPermission("edit_products", "edit_trims"), trims.updateFull);
+router.delete("/trims/:id", authenticate, checkAnyPermission("edit_products", "edit_trims"), trims.remove);
 
 module.exports = router;

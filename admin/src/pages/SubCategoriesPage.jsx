@@ -15,17 +15,24 @@ export default function SubCategoriesPage() {
 	const [showModal, setShowModal] = useState(false);
 	const [editingId, setEditingId] = useState("");
 	const [globalFilter, setGlobalFilter] = useState("");
-	const [form, setForm] = useState({ name: "" });
+	const [parts, setParts] = useState([]);
+	const [filterPart, setFilterPart] = useState("");
+	const [form, setForm] = useState({ name: "", part: "" });
 	const [saving, setSaving] = useState(false);
 
 	useEffect(() => {
-		fetchSubCategories();
+		api.get("/categories").then(({ data }) => setParts(data.data || [])).catch(() => {});
 	}, []);
+
+	useEffect(() => {
+		fetchSubCategories();
+	}, [filterPart]);
 
 	const fetchSubCategories = async () => {
 		setLoading(true);
 		try {
-			const { data } = await api.get("/categories/sub/admin/list");
+			const url = filterPart ? `/categories/sub/admin/list?part=${filterPart}` : "/categories/sub/admin/list";
+			const { data } = await api.get(url);
 			setSubCategories(data.data || []);
 		} catch {
 			// ignore
@@ -46,6 +53,7 @@ export default function SubCategoriesPage() {
 		try {
 			const payload = {
 				name: form.name.trim(),
+				part: form.part || undefined,
 			};
 
 			if (editingId) {
@@ -54,7 +62,7 @@ export default function SubCategoriesPage() {
 				await api.post("/categories/sub", payload);
 			}
 
-			setForm({ name: "" });
+			setForm({ name: "", part: filterPart || "" });
 			setEditingId("");
 			setShowModal(false);
 			fetchSubCategories();
@@ -67,13 +75,13 @@ export default function SubCategoriesPage() {
 
 	const openAddModal = () => {
 		setEditingId("");
-		setForm({ name: "" });
+		setForm({ name: "", part: filterPart || "" });
 		setShowModal(true);
 	};
 
 	const openEditModal = (row) => {
 		setEditingId(row._id);
-		setForm({ name: row.name || "" });
+		setForm({ name: row.name || "", part: row.part || filterPart || "" });
 		setShowModal(true);
 	};
 
@@ -99,8 +107,24 @@ export default function SubCategoriesPage() {
 		</div>
 	);
 
+	const partBody = (row) => {
+		const part = parts.find((p) => String(p._id) === String(row.part));
+		return part?.title || "—";
+	};
+
 	const header = (
 		<div className="admin-table-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3">
+			<Form.Select
+				value={filterPart}
+				onChange={(e) => setFilterPart(e.target.value)}
+				style={{ maxWidth: "220px" }}
+				aria-label="Filter by part"
+			>
+				<option value="">All parts</option>
+				{parts.map((p) => (
+					<option key={p._id} value={p._id}>{p.title}</option>
+				))}
+			</Form.Select>
 			<div className="admin-search">
 				<i className="pi pi-search" />
 				<InputText value={globalFilter} onChange={(event) => setGlobalFilter(event.target.value)} placeholder="Keyword Search" />
@@ -133,6 +157,7 @@ export default function SubCategoriesPage() {
 				>
 					<Column header="No" body={numberBody} style={{ width: "80px" }} />
 					<Column field="name" header="Make Title" sortable />
+					<Column header="Part" body={partBody} />
 					<Column field="createdAt" header="Created" sortable body={(r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "-"} />
 					{canEditSubCategories && <Column header="Actions" body={actionsBody} style={{ width: "120px" }} />}
 				</DataTable>
@@ -144,6 +169,19 @@ export default function SubCategoriesPage() {
 				</Modal.Header>
 				<Form onSubmit={saveSubCategory}>
 					<Modal.Body>
+						<Form.Group className="mb-3">
+							<Form.Label>Parent Part</Form.Label>
+							<Form.Select
+								name="part"
+								value={form.part}
+								onChange={onChange}
+							>
+								<option value="">— None —</option>
+								{parts.map((p) => (
+									<option key={p._id} value={p._id}>{p.title}</option>
+								))}
+							</Form.Select>
+						</Form.Group>
 						<Form.Group className="mb-3">
 							<Form.Label>Make Title</Form.Label>
 							<Form.Control name="name" value={form.name} onChange={onChange} required />

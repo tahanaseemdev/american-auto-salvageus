@@ -6,6 +6,7 @@ const VehicleModel = require("../models/VehicleModel");
 const VehicleYear = require("../models/VehicleYear");
 const VehicleTrim = require("../models/VehicleTrim");
 const { sendJsonResponse } = require("../utils/helpers");
+const { findByIds } = require("../utils/flexibleDb");
 
 const STATIC_PRODUCT_PRICES = new Map([
 	["65f1a001c12d4a001a000016-69cfbed27b92a7441ac50bd3-69cfc2df7b92a7441ac54130-69cfc2fc7b92a7441ac541c6-911800663e091e76169d5282", 1165],
@@ -186,9 +187,9 @@ async function hydrateVehicleRefs(products) {
 	const trimIds = [...new Set(products.map((item) => getIdString(item.trim)).filter((id) => isValidId(id)))];
 
 	const [models, years, trims] = await Promise.all([
-		modelIds.length ? VehicleModel.find({ _id: { $in: modelIds } }).select("title").lean() : [],
-		yearIds.length ? VehicleYear.find({ _id: { $in: yearIds } }).select("title").lean() : [],
-		trimIds.length ? VehicleTrim.find({ _id: { $in: trimIds } }).select("title").lean() : [],
+		findByIds(VehicleModel.collection, modelIds, { title: 1 }),
+		findByIds(VehicleYear.collection, yearIds, { title: 1 }),
+		findByIds(VehicleTrim.collection, trimIds, { title: 1 }),
 	]);
 
 	const modelMap = new Map(models.map((item) => [String(item._id), item]));

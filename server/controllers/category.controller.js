@@ -7,6 +7,16 @@ const VehicleTrim = require("../models/VehicleTrim");
 const { sendJsonResponse } = require("../utils/helpers");
 
 const isValidId = (value) => mongoose.isValidObjectId(value);
+
+function normalizeObjectIdValue(value) {
+	if (value === undefined || value === null || value === "") return null;
+	let normalized = value;
+	if (typeof normalized === "object") normalized = normalized?._id ?? null;
+	normalized = String(normalized || "").trim();
+	if (!normalized || normalized === "[object Object]") return null;
+	if (!isValidId(normalized)) return false;
+	return normalized;
+}
 const LIVE_TRIM_PART_PATTERN = /\b(engine|transmission)s?\b/i;
 
 const getIdString = (value) => {
@@ -760,7 +770,15 @@ async function createSubCategory(req, res, next) {
 		if (!name) {
 			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "name is required.");
 		}
-		const sub = await VehicleMake.create({ name });
+		const part = normalizeObjectIdValue(req.body?.part || req.body?.category);
+		if (part === false) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid part id.");
+		}
+		const sub = await VehicleMake.create({
+			name,
+			...(part ? { part } : {}),
+			...(req.body?.image ? { image: String(req.body.image).trim() } : {}),
+		});
 		return sendJsonResponse(res, HTTP_STATUS_CODES.CREATED, true, "Make created.", sub);
 	} catch (err) {
 		next(err);
@@ -769,7 +787,17 @@ async function createSubCategory(req, res, next) {
 
 async function getSubCategories(req, res, next) {
 	try {
-		const subs = await VehicleMake.find().lean();
+		const partId = String(req.query?.part || req.query?.category || "").trim();
+		const filter = {};
+		if (partId) {
+			if (!isValidId(partId)) {
+				return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid part id.");
+			}
+			const variants = [partId, new mongoose.Types.ObjectId(partId)];
+			filter.$or = [{ part: { $in: variants } }, { part: partId }];
+		}
+		let cursor = VehicleMake.collection.find(filter).sort({ name: 1 });
+		const subs = await cursor.toArray();
 		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Makes fetched.", subs);
 	} catch (err) {
 		next(err);
@@ -778,10 +806,17 @@ async function getSubCategories(req, res, next) {
 
 async function updateSubCategory(req, res, next) {
 	try {
-		const payload = { name: String(req.body?.name || "").trim() };
-		if (!payload.name) {
+		const name = String(req.body?.name || "").trim();
+		if (!name) {
 			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "name is required.");
 		}
+		const part = normalizeObjectIdValue(req.body?.part || req.body?.category);
+		if (part === false) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid part id.");
+		}
+		const payload = { name };
+		if (part) payload.part = part;
+		if (req.body?.image !== undefined) payload.image = String(req.body.image || "").trim();
 
 		const sub = await VehicleMake.findByIdAndUpdate(req.params.id, payload, { new: true });
 		if (!sub) return sendJsonResponse(res, HTTP_STATUS_CODES.NOT_FOUND, false, "Make not found.");

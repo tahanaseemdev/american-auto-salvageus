@@ -7,6 +7,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const path = require("path");
+const fs = require("fs");
 const { sendJsonResponse } = require("./utils/helpers");
 const multer = require("multer");
 
@@ -22,7 +23,12 @@ app.post("/v1/payments/webhook", express.raw({ type: "application/json" }));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cookieParser());
-app.use("/uploads", express.static(path.join(__dirname, "assets", "uploads")));
+const publicUploadsDir = path.join(__dirname, "..", "website", "public", "uploads");
+if (!fs.existsSync(publicUploadsDir)) {
+	fs.mkdirSync(publicUploadsDir, { recursive: true });
+}
+app.use("/uploads", express.static(publicUploadsDir));
+app.use("/assets/uploads", express.static(publicUploadsDir));
 
 // CORS configuration
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || "")
