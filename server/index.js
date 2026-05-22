@@ -23,11 +23,17 @@ app.post("/v1/payments/webhook", express.raw({ type: "application/json" }));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cookieParser());
+const assetsUploadsDir = path.join(__dirname, "assets", "uploads");
 const publicUploadsDir = path.join(__dirname, "..", "website", "public", "uploads");
+if (!fs.existsSync(assetsUploadsDir)) {
+	fs.mkdirSync(assetsUploadsDir, { recursive: true });
+}
 if (!fs.existsSync(publicUploadsDir)) {
 	fs.mkdirSync(publicUploadsDir, { recursive: true });
 }
+app.use("/uploads", express.static(assetsUploadsDir));
 app.use("/uploads", express.static(publicUploadsDir));
+app.use("/assets/uploads", express.static(assetsUploadsDir));
 app.use("/assets/uploads", express.static(publicUploadsDir));
 
 // CORS configuration

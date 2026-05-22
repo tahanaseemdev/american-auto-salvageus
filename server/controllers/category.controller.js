@@ -30,6 +30,31 @@ function shouldFetchLiveTrims(partTitle) {
 	return LIVE_TRIM_PART_PATTERN.test(key);
 }
 
+function normalizePriceValue(value) {
+	if (value === null || value === undefined || value === "") return 0;
+	if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+	const normalized = String(value).replace(/[^0-9.-]/g, "");
+	if (!normalized || normalized === "." || normalized === "-") return 0;
+	const parsed = Number(normalized);
+	return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function resolveSyntheticPrice(trimItem, partTitle) {
+	if (!trimItem) return 0;
+
+	const mileagePriced = /\b(engine|transmission)s?\b/i.test(String(partTitle || ""));
+	if (mileagePriced && Array.isArray(trimItem.mileageBands) && trimItem.mileageBands.length > 0) {
+		const band =
+			trimItem.mileageBands.find((entry) => entry?.selected) ||
+			trimItem.mileageBands.find((entry) => normalizePriceValue(entry?.amount ?? entry?.price) > 0) ||
+			trimItem.mileageBands[0];
+		const amount = normalizePriceValue(band?.amount ?? band?.price);
+		if (amount > 0) return amount;
+	}
+
+	return normalizePriceValue(trimItem.price);
+}
+
 async function findByIdFlexible(EntityModel, id) {
 	const rawId = String(id || "").trim();
 	if (!rawId) return null;
@@ -184,7 +209,7 @@ function buildSyntheticProducts({
 			_id: productId,
 			name: buildName({ yearTitle: yearName, trimTitle: selectedTrim.title }),
 			image: baseImage,
-			price: 0,
+			price: resolveSyntheticPrice(selectedTrim, partName),
 			category,
 			subCategory: selectedMake,
 			model: selectedModel,
@@ -200,7 +225,7 @@ function buildSyntheticProducts({
 				_id: `${getIdString(category?._id)}-${getIdString(selectedMake?._id)}-${getIdString(selectedModel?._id)}-${getIdString(selectedYear?._id)}-${getIdString(trimItem?._id)}`,
 				name: buildName({ yearTitle: yearName, trimTitle: trimItem.title }),
 				image: baseImage,
-				price: 0,
+				price: resolveSyntheticPrice(trimItem, partName),
 				category,
 				subCategory: selectedMake,
 				model: selectedModel,
@@ -259,7 +284,7 @@ function buildSyntheticProducts({
 					_id: `${getIdString(category?._id)}-${getIdString(selectedMake?._id)}-${getIdString(selectedModel?._id)}-${yearId}-${getIdString(trimItem?._id)}`,
 					name: buildName({ yearTitle: yearItem.title, trimTitle: trimItem.title }),
 					image: baseImage,
-					price: 0,
+					price: resolveSyntheticPrice(trimItem, partName),
 					category,
 					subCategory: selectedMake,
 					model: selectedModel,
@@ -336,7 +361,7 @@ function buildSyntheticProducts({
 						_id: `${getIdString(category?._id)}-${getIdString(selectedMake?._id)}-${modelId}-${yearId}-${getIdString(trimItem?._id)}`,
 						name: [yearItem.title, selectedMake.name, modelItem.title, partName, trimItem.title].filter(Boolean).join(" "),
 						image: baseImage,
-						price: 0,
+						price: resolveSyntheticPrice(trimItem, partName),
 						category,
 						subCategory: selectedMake,
 						model: modelItem,
@@ -426,7 +451,7 @@ function buildSyntheticProducts({
 							_id: `${getIdString(category?._id)}-${makeId}-${modelId}-${yearId}-${getIdString(trimItem?._id)}`,
 							name: [yearItem.title, makeItem.name, modelItem.title, partName, trimItem.title].filter(Boolean).join(" "),
 							image: baseImage,
-							price: 0,
+							price: resolveSyntheticPrice(trimItem, partName),
 							category,
 							subCategory: makeItem,
 							model: modelItem,
@@ -545,7 +570,7 @@ function buildPartOnlyProductsPage({
 						_id: `${getIdString(category?._id)}-${makeId}-${modelId}-${yearId}-${getIdString(trimItem?._id)}`,
 						name: [yearItem.title, makeItem.name, modelItem.title, partName, trimItem.title].filter(Boolean).join(" "),
 						image: baseImage,
-						price: 0,
+						price: resolveSyntheticPrice(trimItem, partName),
 						category,
 						subCategory: makeItem,
 						model: modelItem,
@@ -646,13 +671,13 @@ async function getCategoryDetail(req, res, next) {
 			? dbTrims
 			: trimsByHierarchy;
 
-		const selectedMake = selectedMakeId ? makes.find((entry) => getIdString(entry._id) === selectedMakeId) || null : null;
-		const selectedModel = selectedModelId ? models.find((entry) => getIdString(entry._id) === selectedModelId) || null : null;
-		const selectedYear = selectedYearId ? years.find((entry) => getIdString(entry._id) === selectedYearId) || null : null;
+		const selectedMake = selectedMakeId ? makes.find((entry) => getIdString(entry._id) === getIdString(selectedMakeId)) || null : null;
+		const selectedModel = selectedModelId ? models.find((entry) => getIdString(entry._id) === getIdString(selectedModelId)) || null : null;
+		const selectedYear = selectedYearId ? years.find((entry) => getIdString(entry._id) === getIdString(selectedYearId)) || null : null;
 
-		const trims = dbTrims;
+		const trims = dbTrims.length > 0 ? dbTrims : selectedYearId ? trimsByHierarchy.filter((item) => getIdString(item?.year) === getIdString(selectedYearId)) : [];
 
-		const selectedTrim = trim ? trims.find((entry) => getIdString(entry._id) === trim) || null : null;
+		const selectedTrim = trim ? trims.find((entry) => getIdString(entry._id) === getIdString(trim)) || null : null;
 
 		const isPartOnlySelection = !selectedMakeId && !selectedModelId && !selectedYearId && !selectedTrim;
 		let syntheticProducts = [];

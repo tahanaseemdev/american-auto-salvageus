@@ -197,10 +197,10 @@ function HierarchyGrid({ title, emptyMessage, items, getItemLabel, getItemLink, 
 			) : (
 				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
 					{items.map((item) => {
-						const isActive = activeId === item._id;
+						const isActive = String(activeId) === String(item._id);
 						return (
 							<Link
-								key={item._id}
+								key={String(item._id)}
 								to={getItemLink(item)}
 								className={`rounded-xl border text-center px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${isActive
 									? 'bg-amber-400 border-amber-400 text-neutral-900'
@@ -255,10 +255,10 @@ export default function Shop() {
 	const partProducts = categoryDetail?.products || [];
 	const partPagination = categoryDetail?.pagination || null;
 
-	const activeMake = makes.find((item) => item._id === activeMakeId) || null;
-	const activeModel = models.find((item) => item._id === modelId) || null;
-	const activeYear = years.find((item) => item._id === yearId) || null;
-	const activeTrim = trims.find((item) => item._id === trimId) || null;
+	const activeMake = makes.find((item) => String(item._id) === String(activeMakeId)) || null;
+	const activeModel = models.find((item) => String(item._id) === String(modelId)) || null;
+	const activeYear = years.find((item) => String(item._id) === String(yearId)) || null;
+	const activeTrim = trims.find((item) => String(item._id) === String(trimId)) || null;
 
 	const isPartOnlySelection = Boolean(activePartId && !activeMakeId && !modelId && !yearId && !trimId && !searchQuery && !hasStructuredFilters);
 	const productTotalPages = isPartOnlySelection
