@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { BiLock, BiUser, BiEnvelope, BiPhone, BiMap, BiCookie } from 'react-icons/bi';
+import { Link } from 'react-router-dom';
+import { BiLock, BiUser, BiEnvelope, BiPhone, BiMap, BiCookie, BiMessageDetail } from 'react-icons/bi';
 import { IoShieldCheckmark } from "react-icons/io5";
 import { HiSparkles } from 'react-icons/hi';
 
@@ -72,7 +73,7 @@ export default function PrivacyPolicy() {
             <p className="text-neutral-400 max-w-xl">
               This policy explains how American Auto Salvageus collects, uses, and protects information when you use our website and services.
             </p>
-            <p className="text-neutral-500 text-xs font-semibold tracking-wide mt-4">Last updated: April 2026</p>
+            <p className="text-neutral-500 text-xs font-semibold tracking-wide mt-4">Last updated: May 2026</p>
           </Reveal>
         </div>
       </section>
@@ -115,6 +116,23 @@ export default function PrivacyPolicy() {
               'Service providers that help us process payments, ship orders, host systems, or support our operations',
               'Professional advisors, regulators, or law enforcement when required by law',
               'Business partners only when needed to complete a service you requested',
+            ]} />
+          </Section>
+
+          <Section icon={<BiMessageDetail size={16} className="text-amber-500" />} title="SMS & Text Messaging Privacy">
+            <p>
+              If you opt in to receive SMS messages from American Auto Salvage US, we may use the phone number you provide to send service-related text messages as described in our{' '}
+              <Link to="/terms-and-conditions" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">
+                Terms &amp; Conditions
+              </Link>.
+            </p>
+            <p className="font-semibold text-neutral-700">
+              The information (phone numbers) obtained as part of the SMS consent process will not be shared with third parties for marketing purposes.
+            </p>
+            <BulletList items={[
+              'We do not sell or rent your mobile number to third parties for their marketing campaigns',
+              'Message and data rates may apply depending on your wireless carrier',
+              'You can opt out at any time by replying STOP to any message we send, or by contacting us at 1-(800) 805-5708 or info@americanautosalvageus.com',
             ]} />
           </Section>
 

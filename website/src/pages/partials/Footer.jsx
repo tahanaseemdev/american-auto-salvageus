@@ -22,7 +22,7 @@ const helpLinks = [
 const usefulLinks = [
 	{ label: 'Privacy Policy', href: '/privacy' },
 	{ label: 'Disclaimer', href: '/disclaimer' },
-	{ label: 'Terms of Use', href: '/terms' },
+	{ label: 'Terms & Conditions', href: '/terms-and-conditions' },
 	{ label: 'Contact Us', href: '/contact' },
 ];
 

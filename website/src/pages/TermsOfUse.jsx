@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { BiFile, BiShield, BiLinkExternal, BiEnvelope, BiPhone, BiMap } from 'react-icons/bi';
+import { Link } from 'react-router-dom';
+import { BiFile, BiShield, BiLinkExternal, BiEnvelope, BiPhone, BiMap, BiMessageDetail } from 'react-icons/bi';
 import { HiSparkles } from 'react-icons/hi';
 
 const fadeUp = {
@@ -64,12 +65,12 @@ export default function TermsOfUse() {
 							<HiSparkles /> Legal
 						</span>
 						<h1 className="font-['Barlow_Condensed',sans-serif] font-black text-5xl md:text-6xl uppercase leading-none text-white mb-4">
-							Terms <span className="text-amber-400">of Use</span>
+							Terms <span className="text-amber-400">&amp; Conditions</span>
 						</h1>
 						<p className="text-neutral-400 max-w-xl">
-							These terms govern your use of the American Auto Salvageus website and services.
+							These terms govern your use of the American Auto Salvage US website, services, and SMS communications.
 						</p>
-						<p className="text-neutral-500 text-xs font-semibold tracking-wide mt-4">Last updated: April 2026</p>
+						<p className="text-neutral-500 text-xs font-semibold tracking-wide mt-4">Last updated: May 2026</p>
 					</Reveal>
 				</div>
 			</section>
@@ -112,10 +113,95 @@ export default function TermsOfUse() {
 
 					<Section icon={<BiShield size={16} className="text-amber-500" />} title="Changes and Termination">
 						<BulletList items={[
-							'We may update these Terms of Use at any time by posting a revised version on this page',
+							'We may update these Terms & Conditions at any time by posting a revised version on this page',
 							'Continued use of the site after changes are posted means you accept the revised terms',
 							'We may suspend or terminate access to the site if necessary to protect the business, users, or platform',
 						]} />
+					</Section>
+
+					<Reveal>
+						<div className="flex items-center gap-2 mb-5 px-1">
+							<span className="w-8 h-px bg-amber-400" />
+							<p className="font-['Barlow_Condensed',sans-serif] font-black text-sm uppercase tracking-[0.14em] text-neutral-500">
+								SMS Terms
+							</p>
+						</div>
+					</Reveal>
+
+					<Section icon={<BiMessageDetail size={16} className="text-amber-500" />} title="1. SMS Consent Communication">
+						<p>
+							The information (phone numbers) obtained as part of the SMS consent process will not be shared with third parties for marketing purposes.
+						</p>
+					</Section>
+
+					<Section icon={<BiMessageDetail size={16} className="text-amber-500" />} title="2. Types of SMS Communications">
+						<p>
+							If you have consented to receive text messages from American Auto Salvage US, you may receive messages related to the following:
+						</p>
+						<BulletList items={[
+							'Order confirmations and status updates',
+							'Quote and product inquiry follow-up messages',
+							'Billing and payment inquiries',
+							'Shipping and delivery notifications',
+						]} />
+					</Section>
+
+					<Section icon={<BiMessageDetail size={16} className="text-amber-500" />} title="3. Message Frequency">
+						<p>
+							Message frequency may vary depending on the type of communication. For example, you may receive up to 5 SMS messages per week related to your orders, quotes, billing, and shipping updates.
+						</p>
+					</Section>
+
+					<Section icon={<BiMessageDetail size={16} className="text-amber-500" />} title="4. Potential Fees for SMS Messaging">
+						<p>
+							Please note that standard message and data rates may apply, depending on your carrier&apos;s pricing plan. These fees may vary if the message is sent domestically or internationally.
+						</p>
+					</Section>
+
+					<Section icon={<BiMessageDetail size={16} className="text-amber-500" />} title="5. Opt-In Method">
+						<p>You may opt in to receive SMS messages from American Auto Salvage US in the following ways:</p>
+						<BulletList items={[
+							'Verbally, during a phone conversation with our team',
+							'By submitting an online form on our website (contact, registration, product inquiry, or checkout)',
+							'By providing your mobile number when requesting order or quote updates',
+						]} />
+					</Section>
+
+					<Section icon={<BiMessageDetail size={16} className="text-amber-500" />} title="6. Opt-Out Method">
+						<p>
+							You can opt out of receiving SMS messages at any time. To do so, simply reply &quot;STOP&quot; to any SMS message you receive. Alternatively, you can contact us at{' '}
+							<a href="tel:+18008055708" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">1-(800) 805-5708</a>
+							{' '}or{' '}
+							<a href="mailto:info@americanautosalvageus.com" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">info@americanautosalvageus.com</a>
+							{' '}to request removal from our messaging list.
+						</p>
+					</Section>
+
+					<Section icon={<BiMessageDetail size={16} className="text-amber-500" />} title="7. Help">
+						<p>
+							If you are experiencing any issues, you can reply with the keyword &quot;HELP&quot;. Or, you can get help directly from us on our{' '}
+							<Link to="/contact" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">Contact Us</Link>
+							{' '}page, by calling{' '}
+							<a href="tel:+18008055708" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">1-(800) 805-5708</a>
+							, or by emailing{' '}
+							<a href="mailto:info@americanautosalvageus.com" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">info@americanautosalvageus.com</a>.
+						</p>
+					</Section>
+
+					<Section icon={<BiMessageDetail size={16} className="text-amber-500" />} title="8. Standard Messaging Disclosures">
+						<BulletList items={[
+							'Message and data rates may apply.',
+							'You can opt out at any time by texting "STOP."',
+							'For assistance, text "HELP" or visit our Privacy Policy and Terms & Conditions pages.',
+							'Message frequency may vary.',
+						]} />
+						<p className="text-neutral-500 text-xs pt-1">
+							See our{' '}
+							<Link to="/privacy" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">Privacy Policy</Link>
+							{' '}and{' '}
+							<Link to="/terms-and-conditions" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">Terms &amp; Conditions</Link>
+							{' '}for more information.
+						</p>
 					</Section>
 
 					<Reveal>
@@ -124,7 +210,7 @@ export default function TermsOfUse() {
 								<span className="w-4 h-0.5 bg-amber-400 inline-block" /> Contact Us
 							</h2>
 							<p className="text-neutral-400 text-sm mb-5">
-								If you have questions about these Terms of Use, please contact us using the information below.
+								If you have questions about these Terms &amp; Conditions, please contact us using the information below.
 							</p>
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 								{[
