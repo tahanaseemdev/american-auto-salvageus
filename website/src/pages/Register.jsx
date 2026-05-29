@@ -11,7 +11,7 @@ export default function Register() {
 
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '', terms: false, newsletter: false });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '', terms: false, newsletter: false, smsConsent: false });
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
 
@@ -215,6 +215,20 @@ export default function Register() {
                     <input type="checkbox" checked={form.newsletter} onChange={e => update('newsletter', e.target.checked)}
                       className="accent-amber-400 w-4 h-4" />
                     Send me deals, alerts, and part availability updates.
+                  </label>
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input type="checkbox" checked={form.smsConsent} onChange={e => update('smsConsent', e.target.checked)}
+                      className="mt-0.5 accent-amber-400 w-4 h-4 shrink-0" />
+                    <span className="text-xs text-neutral-500 leading-relaxed">
+                      By checking this box, I consent to receive SMS messages from{' '}
+                      <span className="font-semibold text-neutral-700">American Auto Salvage US</span>{' '}
+                      related to answering parts inquiries and providing quotes at the phone number provided above.
+                      The SMS frequency may vary. Data rates may apply. For assistance, reply HELP. Reply STOP to
+                      opt out of receiving text messages. Please review our{' '}
+                      <Link to="/privacy" className="text-amber-500 hover:underline font-semibold">Privacy Policy</Link>{' '}
+                      and{' '}
+                      <Link to="/terms-and-conditions" className="text-amber-500 hover:underline font-semibold">Terms &amp; Conditions</Link>.
+                    </span>
                   </label>
                 </div>
 

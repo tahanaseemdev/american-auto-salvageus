@@ -14,6 +14,7 @@ const EMPTY_FORM = {
 	state: '',
 	zip: '',
 	notes: '',
+	smsConsent: false,
 };
 
 function Input({ label, name, value, onChange, type = 'text', required = false, placeholder = '' }) {
@@ -91,8 +92,8 @@ export default function ProductInquiry() {
 	}, [productId]);
 
 	const onChange = (event) => {
-		const { name, value } = event.target;
-		setForm((prev) => ({ ...prev, [name]: value }));
+		const { name, value, type, checked } = event.target;
+		setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
 	};
 
 	const submitInquiry = async (event) => {
@@ -238,11 +239,32 @@ export default function ProductInquiry() {
 									{fullName ? <span className="block mt-1">Requested by: {fullName}</span> : null}
 								</div>
 
-								<button
-									type="submit"
-									disabled={sending || loadingProduct || !product}
-									className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 disabled:opacity-60 text-white text-[12px] font-black tracking-widest uppercase px-6 py-3 rounded-lg transition-colors"
-								>
+							{/* SMS Consent */}
+							<label className="flex items-start gap-2.5 cursor-pointer">
+								<input
+									type="checkbox"
+									name="smsConsent"
+									checked={form.smsConsent}
+									onChange={onChange}
+									className="mt-0.5 accent-amber-400 w-4 h-4 shrink-0"
+								/>
+								<span className="text-xs text-neutral-500 leading-relaxed">
+									By checking this box, I consent to receive SMS messages from{' '}
+									<span className="font-semibold text-neutral-700">American Auto Salvage US</span>{' '}
+									related to answering parts inquiries and providing quotes at the phone number provided above.
+									The SMS frequency may vary. Data rates may apply. For assistance, reply HELP. Reply STOP to
+									opt out of receiving text messages. Please review our{' '}
+									<a href="/privacy" className="text-amber-500 hover:underline font-semibold">Privacy Policy</a>{' '}
+									and{' '}
+									<a href="/terms-and-conditions" className="text-amber-500 hover:underline font-semibold">Terms &amp; Conditions</a>.
+								</span>
+							</label>
+
+							<button
+								type="submit"
+								disabled={sending || loadingProduct || !product}
+								className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-amber-400 hover:text-neutral-900 disabled:opacity-60 text-white text-[12px] font-black tracking-widest uppercase px-6 py-3 rounded-lg transition-colors"
+							>
 									{sending ? (
 										<BiLoaderAlt className="animate-spin" size={15} />
 									) : isQuoteMode ? (

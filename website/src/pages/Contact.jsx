@@ -26,7 +26,7 @@ function Reveal({ children, className = '', delay = 0 }) {
 const SUBJECTS = ['General Inquiry', 'Order Support', 'Part Availability', 'Return / Warranty', 'Business / Wholesale', 'Other'];
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '', smsConsent: false });
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -122,7 +122,7 @@ export default function Contact() {
                       <h3 className="font-['Barlow_Condensed',sans-serif] font-black text-2xl uppercase text-neutral-900 mb-2">Message Sent!</h3>
                       <p className="text-neutral-500 mb-1">Thanks, <span className="font-bold text-amber-500">{form.name}</span>. We received your message.</p>
                       <p className="text-neutral-400 text-sm">Expect a reply at <span className="font-semibold">{form.email}</span> within 1 business day.</p>
-                      <button onClick={() => { setSubmitted(false); setForm({ name: '', email: '', phone: '', subject: '', message: '' }); }}
+                      <button onClick={() => { setSubmitted(false); setForm({ name: '', email: '', phone: '', subject: '', message: '', smsConsent: false }); }}
                         className="mt-6 border border-neutral-200 hover:border-amber-400 text-neutral-600 hover:text-amber-500 font-bold text-xs tracking-widest uppercase px-5 py-2.5 rounded-xl transition-all">
                         Send Another
                       </button>
@@ -190,6 +190,26 @@ export default function Contact() {
                           <span className="text-[11px] text-neutral-400">{form.message.length} chars</span>
                         </div>
                       </div>
+
+                      {/* SMS Consent */}
+                      <label className="flex items-start gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={form.smsConsent}
+                          onChange={e => update('smsConsent', e.target.checked)}
+                          className="mt-0.5 accent-amber-400 w-4 h-4 shrink-0"
+                        />
+                        <span className="text-xs text-neutral-500 leading-relaxed">
+                          By checking this box, I consent to receive SMS messages from{' '}
+                          <span className="font-semibold text-neutral-700">American Auto Salvage US</span>{' '}
+                          related to answering parts inquiries and providing quotes at the phone number provided above.
+                          The SMS frequency may vary. Data rates may apply. For assistance, reply HELP. Reply STOP to
+                          opt out of receiving text messages. Please review our{' '}
+                          <a href="/privacy" className="text-amber-500 hover:underline font-semibold">Privacy Policy</a>{' '}
+                          and{' '}
+                          <a href="/terms-and-conditions" className="text-amber-500 hover:underline font-semibold">Terms &amp; Conditions</a>.
+                        </span>
+                      </label>
 
                       <motion.button
                         type="submit"
