@@ -24,6 +24,7 @@ const {
 	createEmployee,
 	updateEmployee,
 	resendEmployeeCredentials,
+	deleteEmployee,
 	reassignOrderToEmployee,
 } = require("../controllers/employee.controller");
 const { adminGetContactQueries, markContactQueryRead } = require("../controllers/contact.controller");
@@ -49,6 +50,7 @@ router.get("/employees", checkPermission("manage_employees"), listEmployees);
 router.post("/employees", checkPermission("manage_employees"), createEmployee);
 router.patch("/employees/:id", checkPermission("manage_employees"), updateEmployee);
 router.post("/employees/:id/resend-credentials", checkPermission("manage_employees"), resendEmployeeCredentials);
+router.delete("/employees/:id", checkPermission("manage_employees"), deleteEmployee);
 
 // ── Orders ────────────────────────────────────────────────────────────────────
 router.get("/orders/mine", checkPermission("view_assigned_orders"), getMyAssignedOrders);

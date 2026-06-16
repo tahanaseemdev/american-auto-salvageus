@@ -146,8 +146,11 @@ async function updateEmployee(req, res, next) {
 
 		const { name, isActiveForAssignment, isRevoked, employeeQueueOrder } = req.body;
 		if (name !== undefined) employee.name = String(name).trim();
-		if (isActiveForAssignment !== undefined) employee.isActiveForAssignment = Boolean(isActiveForAssignment);
 		if (isRevoked !== undefined) employee.isRevoked = Boolean(isRevoked);
+		if (isRevoked === false) {
+			employee.isActiveForAssignment = true;
+		}
+		if (isActiveForAssignment !== undefined) employee.isActiveForAssignment = Boolean(isActiveForAssignment);
 		if (employeeQueueOrder !== undefined) employee.employeeQueueOrder = Number(employeeQueueOrder);
 
 		await employee.save();
@@ -212,6 +215,58 @@ async function listAssignableEmployees(req, res, next) {
 	}
 }
 
+async function deleteEmployee(req, res, next) {
+	try {
+		const employeeRole = await getEmployeeRole();
+		const employee = await User.findOne({ _id: req.params.id, role: employeeRole?._id });
+		if (!employee) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.NOT_FOUND, false, "Employee not found.");
+		}
+
+		const openOrders = await Order.find({
+			assignedTo: employee._id,
+			assignmentStatus: { $in: ["Assigned", "InProgress"] },
+		}).select("_id orderNumber");
+
+		if (openOrders.length > 0) {
+			const now = new Date();
+			await Promise.all(
+				openOrders.map((order) =>
+					Order.findByIdAndUpdate(order._id, {
+						assignedTo: null,
+						assignedAt: null,
+						assignmentStatus: null,
+						$push: {
+							assignmentHistory: {
+								from: employee._id,
+								to: null,
+								by: req.user._id,
+								action: "unassigned_on_employee_delete",
+								note: `Employee ${employee.name} was deleted; order unassigned`,
+								at: now,
+							},
+						},
+					})
+				)
+			);
+		}
+
+		await User.findByIdAndDelete(employee._id);
+
+		const message =
+			openOrders.length > 0
+				? `Employee deleted. ${openOrders.length} open order(s) were unassigned.`
+				: "Employee deleted.";
+
+		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, message, {
+			_id: employee._id,
+			unassignedOrders: openOrders.length,
+		});
+	} catch (err) {
+		next(err);
+	}
+}
+
 async function reassignOrderToEmployee(req, res, next) {
 	try {
 		const { employeeId, note } = req.body;
@@ -249,5 +304,6 @@ module.exports = {
 	createEmployee,
 	updateEmployee,
 	resendEmployeeCredentials,
+	deleteEmployee,
 	reassignOrderToEmployee,
 };

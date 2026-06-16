@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BiEnvelope, BiRefresh, BiUserPlus } from "react-icons/bi";
+import { BiEnvelope, BiRefresh, BiTrash, BiUndo, BiUserPlus } from "react-icons/bi";
 import { Button, Form, Modal } from "react-bootstrap";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
@@ -99,14 +99,40 @@ export default function EmployeesPage() {
 		}
 	};
 
+	const deleteEmployee = async (employee) => {
+		const openCount = employee.openOrders || 0;
+		const openWarning = openCount > 0
+			? `\n\nThis employee has ${openCount} open order(s). They will be unassigned automatically.`
+			: "";
+		if (!window.confirm(`Permanently delete ${employee.name} (${employee.email})? This cannot be undone.${openWarning}`)) return;
+		try {
+			const { data } = await api.delete(`/admin/employees/${employee._id}`);
+			toast.success(data.message || "Employee deleted.");
+			fetchEmployees();
+		} catch (err) {
+			toast.error(err.response?.data?.message || "Failed to delete employee.");
+		}
+	};
+
 	const revokeEmployee = async (employee) => {
-		if (!window.confirm(`Revoke access for ${employee.name}?`)) return;
+		if (!window.confirm(`Revoke access for ${employee.name}? They will not be able to log in or receive new assignments.`)) return;
 		try {
 			await api.patch(`/admin/employees/${employee._id}`, { isRevoked: true, isActiveForAssignment: false });
 			fetchEmployees();
 			toast.success("Employee access revoked.");
 		} catch {
 			toast.error("Failed to revoke employee.");
+		}
+	};
+
+	const restoreEmployee = async (employee) => {
+		if (!window.confirm(`Restore access for ${employee.name}? They can log in again and receive round-robin assignments.`)) return;
+		try {
+			await api.patch(`/admin/employees/${employee._id}`, { isRevoked: false, isActiveForAssignment: true });
+			fetchEmployees();
+			toast.success("Employee access restored.");
+		} catch {
+			toast.error("Failed to restore employee.");
 		}
 	};
 
@@ -128,15 +154,29 @@ export default function EmployeesPage() {
 		row.lastAssignedAt ? new Date(row.lastAssignedAt).toLocaleString() : "—";
 
 	const actionsBody = (row) => (
-		<div className="d-flex gap-2">
-			<Button variant="outline-secondary" size="sm" onClick={() => resendCredentials(row)} title="Resend credentials">
-				<BiEnvelope size={16} />
-			</Button>
+		<div className="d-flex flex-wrap gap-2 align-items-center">
 			{!row.isRevoked && (
-				<Button variant="outline-danger" size="sm" onClick={() => revokeEmployee(row)}>
-					Revoke
+				<Button variant="outline-secondary" size="sm" onClick={() => resendCredentials(row)} title="Resend credentials">
+					<BiEnvelope size={16} />
 				</Button>
 			)}
+			{!row.isRevoked ? (
+				<Button variant="outline-warning" size="sm" onClick={() => revokeEmployee(row)} title="Revoke access">
+					Revoke
+				</Button>
+			) : (
+				<Button variant="outline-success" size="sm" onClick={() => restoreEmployee(row)} title="Restore access">
+					<BiUndo size={16} className="me-1" /> Restore
+				</Button>
+			)}
+			<Button
+				variant="outline-danger"
+				size="sm"
+				onClick={() => deleteEmployee(row)}
+				title="Delete employee permanently"
+			>
+				<BiTrash size={16} />
+			</Button>
 			{row.isRevoked && <span className="admin-tag danger">Revoked</span>}
 		</div>
 	);
@@ -184,7 +224,7 @@ export default function EmployeesPage() {
 					<Column header="Active" body={activeBody} style={{ width: "100px" }} />
 					<Column header="Workload" body={statsBody} />
 					<Column header="Last assigned" body={lastAssignedBody} />
-					<Column header="Actions" body={actionsBody} style={{ width: "180px" }} />
+					<Column header="Actions" body={actionsBody} style={{ width: "220px" }} />
 				</DataTable>
 			</div>
 

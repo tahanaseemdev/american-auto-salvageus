@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button, Form, Modal } from "react-bootstrap";
-import { BiShow } from "react-icons/bi";
+import { BiShow, BiUserPlus } from "react-icons/bi";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { InputText } from "primereact/inputtext";
@@ -41,6 +41,7 @@ export default function OrdersPage() {
 	const [assignmentFilter, setAssignmentFilter] = useState("");
 	const [unassignedOnly, setUnassignedOnly] = useState(false);
 	const [showDetails, setShowDetails] = useState(false);
+	const [showAssignModal, setShowAssignModal] = useState(false);
 	const [selectedOrder, setSelectedOrder] = useState(null);
 	const [reassignEmployeeId, setReassignEmployeeId] = useState("");
 	const [assignNote, setAssignNote] = useState("");
@@ -94,9 +95,10 @@ export default function OrdersPage() {
 			});
 			setOrders((prev) => prev.map((o) => (o._id === selectedOrder._id ? data.data : o)));
 			setSelectedOrder(data.data);
-			setReassignEmployeeId("");
-			setAssignNote("");
+			setReassignEmployeeId(data.data.assignedTo?._id || "");
+			setAssignNote(data.data.employeeNotes || "");
 			toast.success(data.message || "Order assigned.");
+			setShowAssignModal(false);
 		} catch (err) {
 			toast.error(err.response?.data?.message || "Failed to assign order.");
 		} finally {
@@ -141,11 +143,34 @@ export default function OrdersPage() {
 		return "Guest";
 	};
 
+	const openAssignModal = (row) => {
+		setSelectedOrder(row);
+		setReassignEmployeeId(row.assignedTo?._id || "");
+		setAssignNote(row.employeeNotes || "");
+		setShowAssignModal(true);
+	};
+
 	const openDetailsModal = (row) => {
 		setSelectedOrder(row);
 		setReassignEmployeeId(row.assignedTo?._id || "");
 		setAssignNote(row.employeeNotes || "");
 		setShowDetails(true);
+	};
+
+	const assignActionBody = (row) => {
+		if (!canEditOrders) return null;
+		return (
+			<Button
+				variant={row.assignedTo ? "outline-secondary" : "outline-primary"}
+				size="sm"
+				className={!row.assignedTo ? "admin-cta-btn" : ""}
+				onClick={() => openAssignModal(row)}
+				title={row.assignedTo ? "Reassign order" : "Assign order to employee"}
+			>
+				<BiUserPlus size={16} className="me-1" />
+				{row.assignedTo ? "Reassign" : "Assign"}
+			</Button>
+		);
 	};
 
 	const detailsButtonBody = (row) => (
@@ -226,7 +251,8 @@ export default function OrdersPage() {
 					<Column header="Assigned To" body={assignmentBody} />
 					<Column header="Total" body={totalBody} sortable field="totalAmount" />
 					<Column header="Fulfillment" body={statusBody} sortable field="status" />
-					<Column header="View" body={detailsButtonBody} style={{ width: "90px" }} />
+					{canEditOrders && <Column header="Assign" body={assignActionBody} style={{ width: "120px" }} />}
+					<Column header="View" body={detailsButtonBody} style={{ width: "70px" }} />
 					{canEditOrders && <Column header="Update Status" body={statusActionBody} style={{ width: "160px" }} />}
 					<Column header="Date" body={dateBody} sortable field="createdAt" />
 				</DataTable>
@@ -278,49 +304,20 @@ export default function OrdersPage() {
 
 							{canEditOrders && (
 								<div className="border rounded p-3 bg-light">
-									<strong className="d-block mb-2">
-										{selectedOrder.assignedTo ? "Reassign to employee" : "Assign to employee"}
-									</strong>
-									<p className="small text-muted mb-3">
-										Employee and admin will receive an email notification. Notes are visible to the employee.
-									</p>
-									<Form.Group className="mb-3">
-										<Form.Label className="small fw-semibold">Employee</Form.Label>
-										<Form.Select
-											size="sm"
-											value={reassignEmployeeId}
-											onChange={(e) => setReassignEmployeeId(e.target.value)}
-											disabled={!employees.length}
-										>
-											<option value="">{employees.length ? "Select employee…" : "No active employees"}</option>
-											{employees.map((emp) => (
-												<option key={emp._id} value={emp._id}>{emp.name} ({emp.email})</option>
-											))}
-										</Form.Select>
-									</Form.Group>
-									<Form.Group className="mb-3">
-										<Form.Label className="small fw-semibold">Note for employee (optional)</Form.Label>
-										<Form.Control
-											as="textarea"
-											rows={3}
-											size="sm"
-											value={assignNote}
-											onChange={(e) => setAssignNote(e.target.value)}
-											placeholder="e.g. Call customer within 1 hour, confirm part availability…"
-										/>
-									</Form.Group>
-									<Button
-										size="sm"
-										className="admin-cta-btn"
-										disabled={!reassignEmployeeId || reassigning || !employees.length}
-										onClick={assignOrder}
-									>
-										{reassigning
-											? "Assigning…"
-											: selectedOrder.assignedTo
-												? "Reassign & notify"
-												: "Assign & notify"}
-									</Button>
+									<div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+										<strong>
+											{selectedOrder.assignedTo ? "Assigned to employee" : "Not assigned yet"}
+										</strong>
+										<Button size="sm" className="admin-cta-btn" onClick={() => { setShowDetails(false); openAssignModal(selectedOrder); }}>
+											<BiUserPlus size={16} className="me-1" />
+											{selectedOrder.assignedTo ? "Reassign" : "Assign"}
+										</Button>
+									</div>
+									{selectedOrder.assignedTo && (
+										<p className="small mb-0 text-muted">
+											{selectedOrder.assignedTo.name} — {ASSIGNMENT_LABELS[selectedOrder.assignmentStatus] || selectedOrder.assignmentStatus || "—"}
+										</p>
+									)}
 								</div>
 							)}
 
@@ -359,6 +356,73 @@ export default function OrdersPage() {
 				</Modal.Body>
 				<Modal.Footer>
 					<Button variant="secondary" onClick={() => setShowDetails(false)}>Close</Button>
+				</Modal.Footer>
+			</Modal>
+
+			<Modal show={showAssignModal} onHide={() => setShowAssignModal(false)} centered>
+				<Modal.Header closeButton>
+					<Modal.Title>
+						{selectedOrder?.assignedTo ? "Reassign order" : "Assign order to employee"}
+					</Modal.Title>
+				</Modal.Header>
+				<Modal.Body>
+					{selectedOrder && (
+						<div className="d-flex flex-column gap-3">
+							<div className="border rounded p-3 bg-light small">
+								<div><strong>Order:</strong> {selectedOrder.orderNumber}</div>
+								<div><strong>Customer:</strong> {getOrderCustomerName(selectedOrder)}</div>
+								<div><strong>Total:</strong> ${Number(selectedOrder.totalAmount || 0).toFixed(2)}</div>
+								{selectedOrder.assignedTo && (
+									<div className="mt-1 text-muted">
+										Currently assigned to: <strong>{selectedOrder.assignedTo.name}</strong>
+									</div>
+								)}
+							</div>
+
+							<Form.Group>
+								<Form.Label className="fw-semibold">Employee *</Form.Label>
+								<Form.Select
+									value={reassignEmployeeId}
+									onChange={(e) => setReassignEmployeeId(e.target.value)}
+									disabled={!employees.length}
+								>
+									<option value="">{employees.length ? "Select employee…" : "No active employees — add one on Employees page"}</option>
+									{employees.map((emp) => (
+										<option key={emp._id} value={emp._id}>{emp.name} ({emp.email})</option>
+									))}
+								</Form.Select>
+							</Form.Group>
+
+							<Form.Group>
+								<Form.Label className="fw-semibold">Note for employee (optional)</Form.Label>
+								<Form.Control
+									as="textarea"
+									rows={4}
+									value={assignNote}
+									onChange={(e) => setAssignNote(e.target.value)}
+									placeholder="Instructions for the employee, e.g. priority callback, part check…"
+								/>
+							</Form.Group>
+
+							<p className="small text-muted mb-0">
+								The employee and admin inbox will both receive an email when you assign.
+							</p>
+						</div>
+					)}
+				</Modal.Body>
+				<Modal.Footer>
+					<Button variant="secondary" onClick={() => setShowAssignModal(false)}>Cancel</Button>
+					<Button
+						className="admin-cta-btn"
+						disabled={!reassignEmployeeId || reassigning || !employees.length}
+						onClick={assignOrder}
+					>
+						{reassigning
+							? "Saving…"
+							: selectedOrder?.assignedTo
+								? "Reassign & notify"
+								: "Assign & notify"}
+					</Button>
 				</Modal.Footer>
 			</Modal>
 		</section>
