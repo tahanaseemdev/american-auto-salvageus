@@ -1,4 +1,4 @@
-import { BiCategoryAlt, BiEnvelope, BiGridAlt, BiLock, BiLogOut, BiPackage, BiSolidUserCircle, BiUser, BiListUl } from "react-icons/bi";
+import { BiCategoryAlt, BiEnvelope, BiGridAlt, BiLock, BiLogOut, BiPackage, BiSolidUserCircle, BiUser, BiListUl, BiBriefcase } from "react-icons/bi";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import logo from "../assets/american autos.png";
 import { useAdminAuth } from "../context/AuthContext";
@@ -13,6 +13,8 @@ const NAV_ITEMS = [
 	{ name: "Years", to: "/years", icon: BiCategoryAlt },
 	{ name: "Catalog Products", to: "/products", icon: BiPackage },
 	{ name: "Orders", to: "/orders", icon: BiListUl },
+	{ name: "My Orders", to: "/my-orders", icon: BiListUl },
+	{ name: "Employees", to: "/employees", icon: BiBriefcase },
 	{ name: "Contact Queries", to: "/contact-queries", icon: BiEnvelope },
 	{ name: "Permissions", to: "/permissions", icon: BiLock },
 	{ name: "My Account", to: "/my-account", icon: BiSolidUserCircle }

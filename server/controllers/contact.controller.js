@@ -2,7 +2,7 @@ const ContactQuery = require("../models/ContactQuery");
 const { sendJsonResponse } = require("../utils/helpers");
 const nodemailer = require("nodemailer");
 
-const CONTACT_LEADS_EMAIL = process.env.CONTACT_LEADS_EMAIL || process.env.ORDER_LEADS_EMAIL || "Americansalvageleadsus@gmail.com";
+const CONTACT_LEADS_EMAIL = process.env.CONTACT_LEADS_EMAIL || process.env.ORDER_LEADS_EMAIL || "";
 const DEFAULT_EMAIL_SENDER_NAME = "American Auto Salvage";
 
 function createMailerTransport() {
@@ -24,6 +24,10 @@ function createMailerTransport() {
 async function sendContactLeadEmail(query) {
 	const transport = createMailerTransport();
 	if (!transport) return false;
+	if (!CONTACT_LEADS_EMAIL) {
+		console.warn("CONTACT_LEADS_EMAIL not set — skipping contact notification.");
+		return false;
+	}
 
 	const senderName = process.env.EMAIL_SENDER_NAME || process.env.SMTP_SENDER_NAME || DEFAULT_EMAIL_SENDER_NAME;
 	const senderEmail = process.env.SMTP_FROM || process.env.EMAIL_SENDER || process.env.SMTP_USER;

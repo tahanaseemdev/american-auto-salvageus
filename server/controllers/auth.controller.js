@@ -162,8 +162,11 @@ async function adminLogin(req, res, next) {
 			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Email and password are required.");
 		}
 
-		const user = await User.findOne({ email: email.toLowerCase().trim() }).populate("role");
-		if (!user || !(await user.comparePassword(password))) {
+		const normalizedEmail = String(email).toLowerCase().trim();
+		const normalizedPassword = String(password).trim();
+
+		const user = await User.findOne({ email: normalizedEmail }).populate("role");
+		if (!user || !(await user.comparePassword(normalizedPassword))) {
 			return sendJsonResponse(res, HTTP_STATUS_CODES.UNAUTHORIZED, false, "Invalid credentials.");
 		}
 
@@ -181,7 +184,13 @@ async function adminLogin(req, res, next) {
 
 		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Admin login successful.", {
 			token,
-			user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+			user: {
+				_id: user._id,
+				name: user.name,
+				email: user.email,
+				role: user.role,
+				mustChangePassword: Boolean(user.mustChangePassword),
+			},
 		});
 	} catch (err) {
 		next(err);
@@ -262,4 +271,43 @@ async function resetPassword(req, res, next) {
 	}
 }
 
-module.exports = { register, login, adminLogin, logout, forgotPassword, resetPassword };
+async function adminChangePassword(req, res, next) {
+	try {
+		const { currentPassword, newPassword } = req.body;
+		if (!currentPassword || !newPassword) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "currentPassword and newPassword are required.");
+		}
+		const trimmedCurrent = String(currentPassword).trim();
+		const trimmedNew = String(newPassword).trim();
+		if (trimmedNew.length < 8) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Password must be at least 8 characters.");
+		}
+
+		const user = await User.findById(req.user._id).populate("role");
+		if (!user) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.NOT_FOUND, false, "User not found.");
+		}
+
+		if (!(await user.comparePassword(trimmedCurrent))) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.UNAUTHORIZED, false, "Current password is incorrect.");
+		}
+
+		user.password = trimmedNew;
+		user.mustChangePassword = false;
+		await user.save();
+
+		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Password changed successfully.", {
+			user: {
+				_id: user._id,
+				name: user.name,
+				email: user.email,
+				role: user.role,
+				mustChangePassword: false,
+			},
+		});
+	} catch (err) {
+		next(err);
+	}
+}
+
+module.exports = { register, login, adminLogin, logout, forgotPassword, resetPassword, adminChangePassword };

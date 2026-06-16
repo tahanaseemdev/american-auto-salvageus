@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Order Assigned</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;color:#111827;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+          <tr>
+            <td style="background:#111827;padding:24px 32px;">
+              <h1 style="margin:0;color:#f59e0b;font-size:22px;">New order assigned</h1>
+              <p style="margin:8px 0 0;color:#e5e7eb;font-size:14px;">Order #{{orderNumber}}</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <p style="margin:0 0 16px;">Hi {{employeeName}},</p>
+              <p style="margin:0 0 20px;line-height:1.6;">A customer order has been assigned to you ({{assignmentType}}). Please review the details and follow up with the customer.</p>
+              {{#if hasAdminNote}}
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;margin:0 0 20px;">
+                <tr>
+                  <td style="padding:14px;">
+                    <p style="margin:0 0 4px;font-weight:700;color:#92400e;">Note from admin</p>
+                    <p style="margin:0;color:#78350f;">{{adminNote}}</p>
+                  </td>
+                </tr>
+              </table>
+              {{/if}}
+              <p style="margin:0 0 8px;"><strong>Total:</strong> {{totalAmount}}</p>
+              <p style="margin:0 0 8px;"><strong>Customer:</strong> {{customerName}}</p>
+              <p style="margin:0 0 8px;"><strong>Phone:</strong> {{customerPhone}}</p>
+              <p style="margin:0 0 20px;"><strong>Email:</strong> {{customerEmail}}</p>
+              <h3 style="margin:0 0 12px;font-size:15px;">Products</h3>
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;">
+                <thead>
+                  <tr>
+                    <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Item</th>
+                    <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:center;">Qty</th>
+                    <th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:right;">Line Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{#each products}}
+                  <tr>
+                    <td style="padding:8px;border:1px solid #e5e7eb;">{{name}}</td>
+                    <td style="padding:8px;border:1px solid #e5e7eb;text-align:center;">{{quantity}}</td>
+                    <td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">{{lineTotal}}</td>
+                  </tr>
+                  {{/each}}
+                </tbody>
+              </table>
+              <a href="{{ordersUrl}}" style="display:inline-block;background:#f59e0b;color:#111827;text-decoration:none;padding:12px 24px;border-radius:8px;font-weight:700;">View my orders</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;text-align:center;">
+              &copy; {{year}} {{brandName}}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

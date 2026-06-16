@@ -3,9 +3,15 @@ const nodemailer = require("nodemailer");
 const Order = require("../models/Order");
 const User = require("../models/User");
 const { sendJsonResponse } = require("../utils/helpers");
+const { assignOrderRoundRobin } = require("../services/orderAssignment.service");
+const { syncFulfillmentStatus, isValidAssignmentStatus } = require("../utils/orderStatusSync");
+const {
+	sendOrderCompletedAdminEmail,
+	sendOrderRejectedAdminEmail,
+} = require("../utils/mailer");
 
 const STORE_WHATSAPP = process.env.STORE_WHATSAPP_NUMBER || "923001116556";
-const ORDER_LEADS_EMAIL = process.env.ORDER_LEADS_EMAIL || process.env.CONTACT_LEADS_EMAIL || "Americansalvageleadsus@gmail.com";
+const ORDER_LEADS_EMAIL = process.env.ORDER_LEADS_EMAIL || process.env.CONTACT_LEADS_EMAIL || "";
 const DEFAULT_EMAIL_SENDER_NAME = "American Auto Salvage";
 
 function buildOrderNumber() {
@@ -45,6 +51,10 @@ function createMailerTransport() {
 async function sendOrderLeadEmail({ order, safeProducts }) {
 	const transport = createMailerTransport();
 	if (!transport) return false;
+	if (!ORDER_LEADS_EMAIL) {
+		console.warn("ORDER_LEADS_EMAIL not set — skipping new order notification.");
+		return false;
+	}
 
 	const senderName = process.env.EMAIL_SENDER_NAME || process.env.SMTP_SENDER_NAME || DEFAULT_EMAIL_SENDER_NAME;
 	const senderEmail = process.env.SMTP_FROM || process.env.EMAIL_SENDER || process.env.SMTP_USER;
@@ -137,6 +147,12 @@ async function createOrder(req, res, next) {
 			console.error("Order lead email failed:", emailError?.message || emailError);
 		}
 
+		try {
+			await assignOrderRoundRobin(order._id, safeProducts);
+		} catch (assignError) {
+			console.error("Order round-robin assignment failed:", assignError?.message || assignError);
+		}
+
 		// Clear the cart if user is logged in
 		if (req.user) {
 			await User.findByIdAndUpdate(req.user._id, { cart: [] });
@@ -205,15 +221,36 @@ async function getOrderById(req, res, next) {
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
+function userCanViewAllOrders(user) {
+	if (user.role?.title === "Super Admin") return true;
+	return user.role?.permissions?.includes("view_orders");
+}
+
+function userCanEditAllOrders(user) {
+	if (user.role?.title === "Super Admin") return true;
+	return user.role?.permissions?.includes("edit_orders");
+}
+
 async function adminGetAllOrders(req, res, next) {
 	try {
-		const { status, page = 1, limit = 20 } = req.query;
-		const filter = status ? { status } : {};
+		const { status, assignmentStatus, assignedTo, unassigned, page = 1, limit = 20 } = req.query;
+		const filter = {};
+
+		if (!userCanViewAllOrders(req.user)) {
+			filter.assignedTo = req.user._id;
+		} else {
+			if (status) filter.status = status;
+			if (assignmentStatus) filter.assignmentStatus = assignmentStatus;
+			if (assignedTo) filter.assignedTo = assignedTo;
+			if (unassigned === "true") filter.assignedTo = null;
+		}
+
 		const skip = (Number(page) - 1) * Number(limit);
 
 		const [orders, total] = await Promise.all([
 			Order.find(filter)
 				.populate("user", "name email")
+				.populate("assignedTo", "name email")
 				.sort({ createdAt: -1 })
 				.skip(skip)
 				.limit(Number(limit))
@@ -230,6 +267,90 @@ async function adminGetAllOrders(req, res, next) {
 	}
 }
 
+async function getMyAssignedOrders(req, res, next) {
+	try {
+		const { assignmentStatus, page = 1, limit = 50 } = req.query;
+		const filter = { assignedTo: req.user._id };
+		if (assignmentStatus) filter.assignmentStatus = assignmentStatus;
+
+		const skip = (Number(page) - 1) * Number(limit);
+
+		const [orders, total] = await Promise.all([
+			Order.find(filter)
+				.populate("assignedTo", "name email")
+				.sort({ assignedAt: -1, createdAt: -1 })
+				.skip(skip)
+				.limit(Number(limit))
+				.lean(),
+			Order.countDocuments(filter),
+		]);
+
+		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Assigned orders fetched.", {
+			orders,
+			pagination: { total, page: Number(page), limit: Number(limit), pages: Math.ceil(total / Number(limit)) },
+		});
+	} catch (err) {
+		next(err);
+	}
+}
+
+async function updateAssignmentStatus(req, res, next) {
+	try {
+		const { assignmentStatus, employeeNotes } = req.body;
+		if (!isValidAssignmentStatus(assignmentStatus)) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, "Invalid assignment status.");
+		}
+
+		const order = await Order.findById(req.params.id);
+		if (!order) return sendJsonResponse(res, HTTP_STATUS_CODES.NOT_FOUND, false, "Order not found.");
+
+		const canEditAll = userCanEditAllOrders(req.user);
+		const isAssignedEmployee =
+			order.assignedTo && order.assignedTo.toString() === req.user._id.toString();
+
+		if (!canEditAll && !isAssignedEmployee) {
+			return sendJsonResponse(res, HTTP_STATUS_CODES.FORBIDDEN, false, "Access denied.");
+		}
+
+		const previousStatus = order.assignmentStatus;
+		order.assignmentStatus = assignmentStatus;
+		if (employeeNotes !== undefined) order.employeeNotes = String(employeeNotes).trim();
+
+		const newFulfillmentStatus = syncFulfillmentStatus(order.status, assignmentStatus);
+		if (newFulfillmentStatus !== order.status) {
+			order.status = newFulfillmentStatus;
+		}
+
+		order.assignmentHistory.push({
+			from: order.assignedTo,
+			to: order.assignedTo,
+			by: req.user._id,
+			action: `status_${assignmentStatus}`,
+			note: employeeNotes || `Changed from ${previousStatus || "none"} to ${assignmentStatus}`,
+			at: new Date(),
+		});
+
+		await order.save();
+		await order.populate("assignedTo", "name email");
+		await order.populate("user", "name email");
+
+		const employee = order.assignedTo || req.user;
+		try {
+			if (assignmentStatus === "Completed") {
+				await sendOrderCompletedAdminEmail({ order, employee });
+			} else if (assignmentStatus === "Rejected" || assignmentStatus === "Cancelled") {
+				await sendOrderRejectedAdminEmail({ order, employee, assignmentStatus });
+			}
+		} catch (emailError) {
+			console.error("Assignment status email failed:", emailError?.message || emailError);
+		}
+
+		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Assignment status updated.", order);
+	} catch (err) {
+		next(err);
+	}
+}
+
 async function updateOrderStatus(req, res, next) {
 	try {
 		const { status } = req.body;
@@ -238,7 +359,9 @@ async function updateOrderStatus(req, res, next) {
 			return sendJsonResponse(res, HTTP_STATUS_CODES.BAD_REQUEST, false, `Invalid status. Must be one of: ${validStatuses.join(", ")}`);
 		}
 
-		const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true }).populate("user", "name email");
+		const order = await Order.findByIdAndUpdate(req.params.id, { status }, { new: true })
+			.populate("user", "name email")
+			.populate("assignedTo", "name email");
 		if (!order) return sendJsonResponse(res, HTTP_STATUS_CODES.NOT_FOUND, false, "Order not found.");
 
 		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, "Order status updated.", order);
@@ -247,4 +370,12 @@ async function updateOrderStatus(req, res, next) {
 	}
 }
 
-module.exports = { createOrder, getUserOrders, getOrderById, adminGetAllOrders, updateOrderStatus };
+module.exports = {
+	createOrder,
+	getUserOrders,
+	getOrderById,
+	adminGetAllOrders,
+	getMyAssignedOrders,
+	updateOrderStatus,
+	updateAssignmentStatus,
+};

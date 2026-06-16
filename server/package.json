@@ -4,10 +4,13 @@
 	"description": "americanautosalvageus backend server",
 	"main": "index.js",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
+		"test": "node tests/orderStatusSync.test.js",
 		"start": "node index.js",
 		"dev": "nodemon index.js",
-		"seed:super-admin": "node scripts/seedSuperAdmin.js"
+		"seed:super-admin": "node scripts/seedSuperAdmin.js",
+		"seed:employee-role": "node scripts/seedEmployeeRole.js",
+		"migrate:order-assignment": "node scripts/migrateOrderAssignment.js",
+		"test:smtp": "node scripts/testSmtp.js"
 	},
 	"keywords": [],
 	"author": "",

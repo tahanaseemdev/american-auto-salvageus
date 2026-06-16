@@ -25,6 +25,18 @@ const shippingSchema = new mongoose.Schema(
 	{ _id: false }
 );
 
+const assignmentHistorySchema = new mongoose.Schema(
+	{
+		from: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+		to: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+		by: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+		action: { type: String, required: true },
+		note: { type: String, default: "" },
+		at: { type: Date, default: Date.now },
+	},
+	{ _id: false }
+);
+
 const orderSchema = new mongoose.Schema(
 	{
 		user: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
@@ -38,6 +50,14 @@ const orderSchema = new mongoose.Schema(
 			enum: ["Pending", "Confirmed", "Shipped", "Delivered", "Cancelled"],
 			default: "Pending",
 		},
+		assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+		assignedAt: { type: Date, default: null },
+		assignmentStatus: {
+			type: String,
+			enum: ["Assigned", "InProgress", "Completed", "Rejected", "Cancelled"],
+		},
+		employeeNotes: { type: String, default: "" },
+		assignmentHistory: [assignmentHistorySchema],
 		shippingDetails: shippingSchema,
 		paymentMethod: { type: String, default: "card" },
 	},

@@ -4,10 +4,20 @@ import { BiShow } from "react-icons/bi";
 import { Column } from "primereact/column";
 import { DataTable } from "primereact/datatable";
 import { InputText } from "primereact/inputtext";
+import { toast } from "react-toastify";
 import api from "../utils/api";
 import { useAdminAuth } from "../context/AuthContext";
 
 const ORDER_STATUSES = ["Pending", "Confirmed", "Shipped", "Delivered", "Cancelled"];
+const ASSIGNMENT_STATUSES = ["Assigned", "InProgress", "Completed", "Rejected", "Cancelled"];
+
+const ASSIGNMENT_LABELS = {
+	Assigned: "Assigned",
+	InProgress: "In Progress",
+	Completed: "Completed",
+	Rejected: "Rejected",
+	Cancelled: "Cancelled",
+};
 
 const STATUS_COLORS = {
 	Pending: "warn",
@@ -15,34 +25,83 @@ const STATUS_COLORS = {
 	Shipped: "success",
 	Delivered: "success",
 	Cancelled: "danger",
+	Assigned: "warn",
+	InProgress: "success",
+	Completed: "success",
+	Rejected: "danger",
 };
 
 export default function OrdersPage() {
 	const { hasPermission } = useAdminAuth();
 	const canEditOrders = hasPermission("edit_orders");
 	const [orders, setOrders] = useState([]);
+	const [employees, setEmployees] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [globalFilter, setGlobalFilter] = useState("");
+	const [assignmentFilter, setAssignmentFilter] = useState("");
+	const [unassignedOnly, setUnassignedOnly] = useState(false);
 	const [showDetails, setShowDetails] = useState(false);
 	const [selectedOrder, setSelectedOrder] = useState(null);
+	const [reassignEmployeeId, setReassignEmployeeId] = useState("");
+	const [assignNote, setAssignNote] = useState("");
+	const [reassigning, setReassigning] = useState(false);
 
-	useEffect(() => { fetchOrders(); }, []);
+	useEffect(() => {
+		fetchOrders();
+		if (canEditOrders) fetchEmployees();
+	}, [assignmentFilter, unassignedOnly, canEditOrders]);
 
 	const fetchOrders = async () => {
 		setLoading(true);
 		try {
-			const { data } = await api.get("/admin/orders?limit=100");
+			const params = new URLSearchParams({ limit: "100" });
+			if (assignmentFilter) params.set("assignmentStatus", assignmentFilter);
+			if (unassignedOnly) params.set("unassigned", "true");
+			const { data } = await api.get(`/admin/orders?${params}`);
 			setOrders(data.data?.orders || []);
-		} catch { /* ignore */ } finally {
+		} catch {
+			toast.error("Failed to load orders.");
+		} finally {
 			setLoading(false);
+		}
+	};
+
+	const fetchEmployees = async () => {
+		try {
+			const { data } = await api.get("/admin/employees/assignable");
+			setEmployees(data.data?.employees || []);
+		} catch {
+			// ignore
 		}
 	};
 
 	const updateStatus = async (orderId, newStatus) => {
 		try {
 			const { data } = await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus });
-			setOrders((prev) => prev.map((o) => o._id === orderId ? { ...o, status: data.data.status } : o));
-		} catch { /* ignore */ }
+			setOrders((prev) => prev.map((o) => (o._id === orderId ? { ...o, status: data.data.status } : o)));
+		} catch {
+			toast.error("Failed to update status.");
+		}
+	};
+
+	const assignOrder = async () => {
+		if (!selectedOrder || !reassignEmployeeId) return;
+		setReassigning(true);
+		try {
+			const { data } = await api.patch(`/admin/orders/${selectedOrder._id}/reassign`, {
+				employeeId: reassignEmployeeId,
+				note: assignNote.trim() || undefined,
+			});
+			setOrders((prev) => prev.map((o) => (o._id === selectedOrder._id ? data.data : o)));
+			setSelectedOrder(data.data);
+			setReassignEmployeeId("");
+			setAssignNote("");
+			toast.success(data.message || "Order assigned.");
+		} catch (err) {
+			toast.error(err.response?.data?.message || "Failed to assign order.");
+		} finally {
+			setReassigning(false);
+		}
 	};
 
 	const numberBody = (_row, options) => options.rowIndex + 1;
@@ -50,6 +109,20 @@ export default function OrdersPage() {
 	const statusBody = (row) => (
 		<span className={`admin-tag ${STATUS_COLORS[row.status] || "warn"}`}>{row.status}</span>
 	);
+
+	const assignmentBody = (row) => {
+		if (!row.assignedTo) return <span className="admin-tag danger">Unassigned</span>;
+		return (
+			<div>
+				<div className="small fw-semibold">{row.assignedTo.name}</div>
+				{row.assignmentStatus && (
+					<span className={`admin-tag ${STATUS_COLORS[row.assignmentStatus] || "warn"}`}>
+						{ASSIGNMENT_LABELS[row.assignmentStatus] || row.assignmentStatus}
+					</span>
+				)}
+			</div>
+		);
+	};
 
 	const statusActionBody = (row) => (
 		<Form.Select
@@ -70,6 +143,8 @@ export default function OrdersPage() {
 
 	const openDetailsModal = (row) => {
 		setSelectedOrder(row);
+		setReassignEmployeeId(row.assignedTo?._id || "");
+		setAssignNote(row.employeeNotes || "");
 		setShowDetails(true);
 	};
 
@@ -90,12 +165,34 @@ export default function OrdersPage() {
 	const dateBody = (row) => row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "—";
 
 	const header = (
-		<div className="admin-table-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3">
-			<div className="admin-search">
-				<i className="pi pi-search" />
-				<InputText value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search orders…" />
+		<div className="d-flex flex-column gap-3">
+			<div className="d-flex flex-wrap gap-2 align-items-center">
+				<Form.Select
+					size="sm"
+					style={{ maxWidth: "200px" }}
+					value={assignmentFilter}
+					onChange={(e) => setAssignmentFilter(e.target.value)}
+				>
+					<option value="">All assignment statuses</option>
+					{ASSIGNMENT_STATUSES.map((s) => (
+						<option key={s} value={s}>{ASSIGNMENT_LABELS[s]}</option>
+					))}
+				</Form.Select>
+				<Form.Check
+					type="checkbox"
+					id="unassigned-only"
+					label="Unassigned only"
+					checked={unassignedOnly}
+					onChange={(e) => setUnassignedOnly(e.target.checked)}
+				/>
 			</div>
-			<Button variant="outline-secondary" size="sm" onClick={fetchOrders}>Refresh</Button>
+			<div className="admin-table-toolbar d-flex flex-wrap align-items-center justify-content-between gap-3">
+				<div className="admin-search">
+					<i className="pi pi-search" />
+					<InputText value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search orders…" />
+				</div>
+				<Button variant="outline-secondary" size="sm" onClick={fetchOrders}>Refresh</Button>
+			</div>
 		</div>
 	);
 
@@ -104,7 +201,7 @@ export default function OrdersPage() {
 			<div className="d-flex justify-content-between align-items-center mb-3">
 				<div>
 					<h2 className="h3 fw-bold mb-1 d-flex align-items-center gap-2">Orders</h2>
-					<p className="admin-subtle-text mb-0">View and manage all customer orders.</p>
+					<p className="admin-subtle-text mb-0">View and manage all customer orders and employee assignments.</p>
 				</div>
 			</div>
 
@@ -126,8 +223,9 @@ export default function OrdersPage() {
 					<Column header="No" body={numberBody} style={{ width: "60px" }} />
 					<Column field="orderNumber" header="Order #" sortable />
 					<Column header="Customer" body={customerBody} />
+					<Column header="Assigned To" body={assignmentBody} />
 					<Column header="Total" body={totalBody} sortable field="totalAmount" />
-					<Column header="Status" body={statusBody} sortable field="status" />
+					<Column header="Fulfillment" body={statusBody} sortable field="status" />
 					<Column header="View" body={detailsButtonBody} style={{ width: "90px" }} />
 					{canEditOrders && <Column header="Update Status" body={statusActionBody} style={{ width: "160px" }} />}
 					<Column header="Date" body={dateBody} sortable field="createdAt" />
@@ -154,8 +252,17 @@ export default function OrdersPage() {
 								<strong>Phone:</strong> {selectedOrder.shippingDetails?.phone || "-"}
 							</div>
 							<div>
-								<strong>Status:</strong> {selectedOrder.status || "-"}
+								<strong>Fulfillment status:</strong> {selectedOrder.status || "-"}
 							</div>
+							<div>
+								<strong>Assigned to:</strong>{" "}
+								{selectedOrder.assignedTo
+									? `${selectedOrder.assignedTo.name} (${ASSIGNMENT_LABELS[selectedOrder.assignmentStatus] || selectedOrder.assignmentStatus || "—"})`
+									: "Unassigned"}
+							</div>
+							{selectedOrder.employeeNotes && (
+								<div><strong>Employee notes:</strong> {selectedOrder.employeeNotes}</div>
+							)}
 							<div>
 								<strong>Total:</strong> ${Number(selectedOrder.totalAmount || 0).toFixed(2)}
 							</div>
@@ -165,9 +272,71 @@ export default function OrdersPage() {
 							<div>
 								<strong>Shipping Address:</strong>{" "}
 								{selectedOrder.shippingDetails
-									? `${selectedOrder.shippingDetails.address || ""}, ${selectedOrder.shippingDetails.city || ""}, ${selectedOrder.shippingDetails.state || ""}, ${selectedOrder.shippingDetails.zip || ""}`
+									? `${selectedOrder.shippingDetails.address || selectedOrder.shippingDetails.street || ""}, ${selectedOrder.shippingDetails.city || ""}, ${selectedOrder.shippingDetails.state || ""}, ${selectedOrder.shippingDetails.zip || ""}`
 									: "-"}
 							</div>
+
+							{canEditOrders && (
+								<div className="border rounded p-3 bg-light">
+									<strong className="d-block mb-2">
+										{selectedOrder.assignedTo ? "Reassign to employee" : "Assign to employee"}
+									</strong>
+									<p className="small text-muted mb-3">
+										Employee and admin will receive an email notification. Notes are visible to the employee.
+									</p>
+									<Form.Group className="mb-3">
+										<Form.Label className="small fw-semibold">Employee</Form.Label>
+										<Form.Select
+											size="sm"
+											value={reassignEmployeeId}
+											onChange={(e) => setReassignEmployeeId(e.target.value)}
+											disabled={!employees.length}
+										>
+											<option value="">{employees.length ? "Select employee…" : "No active employees"}</option>
+											{employees.map((emp) => (
+												<option key={emp._id} value={emp._id}>{emp.name} ({emp.email})</option>
+											))}
+										</Form.Select>
+									</Form.Group>
+									<Form.Group className="mb-3">
+										<Form.Label className="small fw-semibold">Note for employee (optional)</Form.Label>
+										<Form.Control
+											as="textarea"
+											rows={3}
+											size="sm"
+											value={assignNote}
+											onChange={(e) => setAssignNote(e.target.value)}
+											placeholder="e.g. Call customer within 1 hour, confirm part availability…"
+										/>
+									</Form.Group>
+									<Button
+										size="sm"
+										className="admin-cta-btn"
+										disabled={!reassignEmployeeId || reassigning || !employees.length}
+										onClick={assignOrder}
+									>
+										{reassigning
+											? "Assigning…"
+											: selectedOrder.assignedTo
+												? "Reassign & notify"
+												: "Assign & notify"}
+									</Button>
+								</div>
+							)}
+
+							{Array.isArray(selectedOrder.assignmentHistory) && selectedOrder.assignmentHistory.length > 0 && (
+								<div>
+									<strong>Assignment history</strong>
+									<div className="mt-2 d-flex flex-column gap-1 small">
+										{selectedOrder.assignmentHistory.map((entry, idx) => (
+											<div key={idx} className="text-muted">
+												{entry.action} — {entry.at ? new Date(entry.at).toLocaleString() : ""}
+												{entry.note ? ` (${entry.note})` : ""}
+											</div>
+										))}
+									</div>
+								</div>
+							)}
 
 							<div>
 								<strong>Items</strong>
@@ -195,5 +364,3 @@ export default function OrdersPage() {
 		</section>
 	);
 }
-
-

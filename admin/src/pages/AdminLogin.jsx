@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BiEnvelope, BiLock, BiShow, BiHide, BiShield } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../context/AuthContext";
+import { getFirstAccessiblePath } from "../utils/rbac";
 
 export default function AdminLogin() {
 	const navigate = useNavigate();
@@ -23,7 +24,8 @@ export default function AdminLogin() {
 		setError("");
 		const result = await login(email, password);
 		if (result.success) {
-			navigate("/dashboard");
+			const stored = JSON.parse(localStorage.getItem("aas_admin_user") || "{}");
+			navigate(getFirstAccessiblePath(stored));
 		} else {
 			setError(result.message);
 		}

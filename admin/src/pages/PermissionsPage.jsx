@@ -18,6 +18,8 @@ const ALL_PERMISSIONS = [
 	"view_orders", "edit_orders",
 	"view_contact_queries",
 	"manage_users", "manage_roles",
+	"manage_employees",
+	"view_assigned_orders", "edit_assigned_orders",
 ];
 
 export default function PermissionsPage() {
@@ -71,7 +73,7 @@ export default function PermissionsPage() {
 				allUsers.filter((user) => {
 					if (!user.role) return false;
 					if (typeof user.role === "string") return true;
-					return user.role.title !== "Super Admin";
+					return user.role.title !== "Super Admin" && user.role.title !== "Employee";
 				})
 			);
 		} catch {

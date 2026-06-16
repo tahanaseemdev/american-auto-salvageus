@@ -4,25 +4,8 @@ const mongoose = require("mongoose");
 const Role = require("../models/Role");
 const User = require("../models/User");
 
-const ALL_PERMISSIONS = [
-	"view_categories",
-	"edit_categories",
-	"view_sub_categories",
-	"edit_sub_categories",
-	"view_models",
-	"edit_models",
-	"view_years",
-	"edit_years",
-	"view_trims",
-	"edit_trims",
-	"view_products",
-	"edit_products",
-	"view_orders",
-	"edit_orders",
-	"view_contact_queries",
-	"manage_users",
-	"manage_roles",
-];
+const { ALL_PERMISSIONS, EMPLOYEE_PERMISSIONS } = require("../constants/permissions");
+const AppSettings = require("../models/AppSettings");
 
 function getArg(name) {
 	const arg = process.argv.find((entry) => entry.startsWith(`--${name}=`));
@@ -78,6 +61,23 @@ async function run() {
 		await user.save();
 		console.info(`Updated existing user as super admin: ${email}`);
 	}
+
+	let employeeRole = await Role.findOne({ title: "Employee" });
+	if (!employeeRole) {
+		employeeRole = await Role.create({ title: "Employee", permissions: EMPLOYEE_PERMISSIONS });
+		console.info("Created role: Employee");
+	} else {
+		employeeRole.permissions = EMPLOYEE_PERMISSIONS;
+		await employeeRole.save();
+		console.info("Updated role: Employee");
+	}
+
+	await AppSettings.findOneAndUpdate(
+		{ key: "order_assignment" },
+		{ $setOnInsert: { lastAssignedEmployeeId: null } },
+		{ upsert: true, new: true }
+	);
+	console.info("Ensured AppSettings order_assignment document exists.");
 
 	console.info("Super admin bootstrap completed successfully.");
 	await mongoose.disconnect();
