@@ -81,6 +81,7 @@ app.use("/v1/parts", require("./routes/category.routes"));
 app.use("/v1/products", require("./routes/product.routes"));
 app.use("/v1/catalog", require("./routes/catalog.routes"));
 app.use("/v1/orders", require("./routes/order.routes"));
+app.use("/v1/leads", require("./routes/lead.routes"));
 app.use("/v1/contact", require("./routes/contact.routes"));
 app.use("/v1/admin", require("./routes/admin.routes"));
 

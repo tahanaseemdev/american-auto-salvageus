@@ -238,6 +238,110 @@ async function sendOrderRejectedAdminEmail({ order, employee, assignmentStatus }
 	});
 }
 
+async function sendContactLeadEmail(query) {
+	const to = process.env.CONTACT_LEADS_EMAIL || process.env.ORDER_LEADS_EMAIL || "";
+	if (!to) {
+		console.warn("CONTACT_LEADS_EMAIL not set — skipping contact notification.");
+		return { sent: false, skipped: true, message: "CONTACT_LEADS_EMAIL not configured" };
+	}
+	if (!isSmtpConfigured()) {
+		const message = "SMTP is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS in server/.env";
+		console.warn(`Email skipped: Contact query — ${message}`);
+		return { sent: false, skipped: true, message };
+	}
+
+	const submittedAt = query?.createdAt ? new Date(query.createdAt).toLocaleString() : new Date().toLocaleString();
+	const html = `
+		<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.5;">
+			<h2 style="margin:0 0 12px;">New Contact Message Received</h2>
+			<p style="margin:0 0 8px;"><strong>Name:</strong> ${query.name}</p>
+			<p style="margin:0 0 8px;"><strong>Email:</strong> ${query.email}</p>
+			<p style="margin:0 0 8px;"><strong>Phone:</strong> ${query.phone || "-"}</p>
+			<p style="margin:0 0 8px;"><strong>Subject:</strong> ${query.subject}</p>
+			<p style="margin:0 0 8px;"><strong>Submitted:</strong> ${submittedAt}</p>
+			<hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;" />
+			<p style="margin:0;"><strong>Message:</strong></p>
+			<p style="margin:8px 0 0;white-space:pre-wrap;">${query.message}</p>
+		</div>
+	`;
+
+	const transport = createMailerTransport();
+	const info = await transport.sendMail({
+		from: getFromAddress(),
+		to,
+		subject: `New Contact Query: ${query.subject}`,
+		html,
+	});
+
+	return { sent: true, messageId: info.messageId };
+}
+
+async function sendNewOrderLeadEmail({ order, products }) {
+	const to = getOrderLeadsEmail();
+	if (!to) {
+		console.warn("ORDER_LEADS_EMAIL not set — skipping new order notification.");
+		return { sent: false, skipped: true, message: "ORDER_LEADS_EMAIL not configured" };
+	}
+	if (!isSmtpConfigured()) {
+		const message = "SMTP is not configured. Set SMTP_HOST, SMTP_USER, and SMTP_PASS in server/.env";
+		console.warn(`Email skipped: New Order ${order.orderNumber} — ${message}`);
+		return { sent: false, skipped: true, message };
+	}
+
+	const safeProducts = Array.isArray(products) ? products : order?.products || [];
+	const itemRows = safeProducts
+		.map((item) => {
+			const qty = Number(item.quantity) || 1;
+			const price = Number(item.price) || 0;
+			const line = price > 0 ? `$${(price * qty).toFixed(2)}` : "To be confirmed";
+			return `<tr>
+				<td style="padding:8px;border:1px solid #e5e7eb;">${item.name}</td>
+				<td style="padding:8px;border:1px solid #e5e7eb;text-align:center;">${qty}</td>
+				<td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${line}</td>
+			</tr>`;
+		})
+		.join("");
+
+	const shipping = order.shippingDetails || {};
+	const html = `
+		<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.5;">
+			<h2 style="margin:0 0 12px;">New Order Received</h2>
+			<p style="margin:0 0 8px;"><strong>Order #:</strong> ${order.orderNumber}</p>
+			<p style="margin:0 0 8px;"><strong>Payment Method:</strong> ${order.paymentMethod || "N/A"}</p>
+			<p style="margin:0 0 16px;"><strong>Total:</strong> $${Number(order.totalAmount || 0).toFixed(2)}</p>
+
+			<h3 style="margin:0 0 8px;">Products</h3>
+			<table style="border-collapse:collapse;width:100%;margin-bottom:16px;">
+				<thead>
+					<tr>
+						<th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:left;">Item</th>
+						<th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:center;">Qty</th>
+						<th style="padding:8px;border:1px solid #e5e7eb;background:#f9fafb;text-align:right;">Line Total</th>
+					</tr>
+				</thead>
+				<tbody>${itemRows}</tbody>
+			</table>
+
+			<h3 style="margin:0 0 8px;">Customer Details</h3>
+			<p style="margin:0;">${shipping.firstName || ""} ${shipping.lastName || ""}</p>
+			<p style="margin:0;">Email: ${shipping.email || "-"}</p>
+			<p style="margin:0;">Phone: ${shipping.phone || "-"}</p>
+			<p style="margin:0;">Address: ${shipping.address || shipping.street || "-"}, ${shipping.city || ""}, ${shipping.state || ""} ${shipping.zip || ""}</p>
+			<p style="margin:8px 0 0;"><strong>Notes:</strong> ${shipping.notes || "-"}</p>
+		</div>
+	`;
+
+	const transport = createMailerTransport();
+	const info = await transport.sendMail({
+		from: getFromAddress(),
+		to,
+		subject: `New Order ${order.orderNumber}`,
+		html,
+	});
+
+	return { sent: true, messageId: info.messageId };
+}
+
 module.exports = {
 	createMailerTransport,
 	isSmtpConfigured,
@@ -250,6 +354,8 @@ module.exports = {
 	sendOrderAssignedAdminEmail,
 	sendOrderCompletedAdminEmail,
 	sendOrderRejectedAdminEmail,
+	sendContactLeadEmail,
+	sendNewOrderLeadEmail,
 	formatOrderProducts,
 	formatShippingDetails,
 };
