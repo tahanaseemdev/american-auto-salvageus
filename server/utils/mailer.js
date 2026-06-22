@@ -238,8 +238,112 @@ async function sendOrderRejectedAdminEmail({ order, employee, assignmentStatus }
 	});
 }
 
+function getContactLeadsEmail() {
+	return process.env.CONTACT_LEADS_EMAIL || process.env.ORDER_LEADS_EMAIL || "";
+}
+
+async function sendContactAssignedEmployeeEmail({ contact, employee, assignmentType = "assignment", adminNote = "" }) {
+	const leadsUrl = `${getAdminPanelUrl()}/my-leads`;
+	const plainTextBody = [
+		`Hi ${employee.name},`,
+		"",
+		`A new lead has been assigned to you (${assignmentType}).`,
+		`Subject: ${contact.subject}`,
+		`Customer: ${contact.name}`,
+		`Phone: ${contact.phone || "—"}`,
+		`Email: ${contact.email}`,
+		adminNote ? `Admin note: ${adminNote}` : "",
+		contact.employeeNotes ? `Note: ${contact.employeeNotes}` : "",
+		"",
+		`View lead: ${leadsUrl}`,
+	].filter(Boolean).join("\n");
+
+	if (!isSmtpConfigured()) {
+		console.warn(`Email skipped: Contact assigned to ${employee.email} — SMTP not configured`);
+		return { sent: false, skipped: true };
+	}
+
+	const html = `
+		<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.5;">
+			<h2 style="margin:0 0 12px;">New lead assigned to you</h2>
+			<p style="margin:0 0 8px;">Hi ${employee.name},</p>
+			<p style="margin:0 0 16px;">A contact lead has been assigned to you (${assignmentType}). Please follow up with the customer.</p>
+			<p style="margin:0 0 8px;"><strong>Subject:</strong> ${contact.subject}</p>
+			<p style="margin:0 0 8px;"><strong>Customer:</strong> ${contact.name}</p>
+			<p style="margin:0 0 8px;"><strong>Phone:</strong> ${contact.phone || "—"}</p>
+			<p style="margin:0 0 8px;"><strong>Email:</strong> ${contact.email}</p>
+			<p style="margin:0 0 8px;"><strong>Source:</strong> ${contact.source || "website"}</p>
+			<hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;" />
+			<p style="margin:0;white-space:pre-wrap;">${contact.message}</p>
+			<p style="margin:16px 0 0;"><a href="${leadsUrl}">Open My Leads</a></p>
+		</div>
+	`;
+
+	const transport = createMailerTransport();
+	const info = await transport.sendMail({
+		from: getFromAddress(),
+		to: employee.email,
+		subject: `Lead assigned: ${contact.subject}`,
+		html,
+		text: plainTextBody,
+	});
+	return { sent: true, messageId: info.messageId };
+}
+
+async function sendContactAssignedAdminEmail({ contact, employee, assignmentType = "assignment", adminNote = "" }) {
+	const to = getContactLeadsEmail();
+	if (!to) {
+		console.warn("CONTACT_LEADS_EMAIL not set — skipping admin contact assignment notification.");
+		return { sent: false, skipped: true };
+	}
+	if (!isSmtpConfigured()) return { sent: false, skipped: true };
+
+	const html = `
+		<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.5;">
+			<h2 style="margin:0 0 12px;">Lead assigned to employee</h2>
+			<p style="margin:0 0 8px;"><strong>Subject:</strong> ${contact.subject}</p>
+			<p style="margin:0 0 8px;"><strong>Customer:</strong> ${contact.name}</p>
+			<p style="margin:0 0 8px;"><strong>Assigned to:</strong> ${employee.name} (${employee.email})</p>
+			<p style="margin:0 0 8px;"><strong>Method:</strong> ${assignmentType}</p>
+			${adminNote ? `<p style="margin:0 0 8px;"><strong>Note:</strong> ${adminNote}</p>` : ""}
+		</div>
+	`;
+
+	const transport = createMailerTransport();
+	const info = await transport.sendMail({
+		from: getFromAddress(),
+		to,
+		subject: `Lead assigned to ${employee.name}: ${contact.subject}`,
+		html,
+	});
+	return { sent: true, messageId: info.messageId };
+}
+
+async function sendContactStatusAdminEmail({ contact, employee, assignmentStatus }) {
+	const to = getContactLeadsEmail();
+	if (!to || !isSmtpConfigured()) return { sent: false, skipped: true };
+
+	const html = `
+		<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.5;">
+			<h2 style="margin:0 0 12px;">Lead marked ${assignmentStatus}</h2>
+			<p style="margin:0 0 8px;"><strong>Subject:</strong> ${contact.subject}</p>
+			<p style="margin:0 0 8px;"><strong>Employee:</strong> ${employee.name}</p>
+			<p style="margin:0 0 8px;"><strong>Notes:</strong> ${contact.employeeNotes || "—"}</p>
+		</div>
+	`;
+
+	const transport = createMailerTransport();
+	await transport.sendMail({
+		from: getFromAddress(),
+		to,
+		subject: `Lead ${assignmentStatus}: ${contact.subject}`,
+		html,
+	});
+	return { sent: true };
+}
+
 async function sendContactLeadEmail(query) {
-	const to = process.env.CONTACT_LEADS_EMAIL || process.env.ORDER_LEADS_EMAIL || "";
+	const to = getContactLeadsEmail();
 	if (!to) {
 		console.warn("CONTACT_LEADS_EMAIL not set — skipping contact notification.");
 		return { sent: false, skipped: true, message: "CONTACT_LEADS_EMAIL not configured" };
@@ -348,6 +452,7 @@ module.exports = {
 	getFromAddress,
 	getAdminPanelUrl,
 	getOrderLeadsEmail,
+	getContactLeadsEmail,
 	sendEmail,
 	sendEmployeeWelcomeEmail,
 	sendOrderAssignedEmployeeEmail,
@@ -355,6 +460,9 @@ module.exports = {
 	sendOrderCompletedAdminEmail,
 	sendOrderRejectedAdminEmail,
 	sendContactLeadEmail,
+	sendContactAssignedEmployeeEmail,
+	sendContactAssignedAdminEmail,
+	sendContactStatusAdminEmail,
 	sendNewOrderLeadEmail,
 	formatOrderProducts,
 	formatShippingDetails,

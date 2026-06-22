@@ -1,5 +1,6 @@
 const ContactQuery = require("../models/ContactQuery");
 const { sendContactLeadEmail } = require("../utils/mailer");
+const { assignContactRoundRobin } = require("../services/contactAssignment.service");
 
 function parseLeadName({ name, firstName, lastName, fullName }) {
 	const direct = String(name || "").trim();
@@ -91,6 +92,7 @@ async function createIncomingContactLead(payload) {
 		phone: normalized.phone,
 		subject: normalized.subject,
 		message: normalized.message,
+		source: String(payload.source || "facebook_lead").trim() || "facebook_lead",
 	});
 
 	try {
@@ -99,7 +101,14 @@ async function createIncomingContactLead(payload) {
 		console.error("Incoming contact lead email failed:", mailErr?.message || mailErr);
 	}
 
-	return query;
+	try {
+		const assignment = await assignContactRoundRobin(query._id);
+		if (assignment?.contact) return assignment.contact;
+	} catch (assignErr) {
+		console.error("Incoming contact assignment failed:", assignErr?.message || assignErr);
+	}
+
+	return ContactQuery.findById(query._id).populate("assignedTo", "name email").lean();
 }
 
 module.exports = {

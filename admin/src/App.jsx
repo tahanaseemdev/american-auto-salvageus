@@ -14,6 +14,7 @@ import UsersPage from "./pages/UsersPage";
 import OrdersPage from "./pages/OrdersPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import EmployeeOrdersPage from "./pages/EmployeeOrdersPage";
+import EmployeeLeadsPage from "./pages/EmployeeLeadsPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ContactQueriesPage from "./pages/ContactQueriesPage";
 import { AdminAuthProvider, useAdminAuth } from "./context/AuthContext";
@@ -65,6 +66,7 @@ function AppRoutes() {
         <Route path="/products" element={<RequirePermission path="/products"><ProductsPage /></RequirePermission>} />
         <Route path="/orders" element={<RequirePermission path="/orders"><OrdersPage /></RequirePermission>} />
         <Route path="/my-orders" element={<RequirePermission path="/my-orders"><EmployeeOrdersPage /></RequirePermission>} />
+        <Route path="/my-leads" element={<RequirePermission path="/my-leads"><EmployeeLeadsPage /></RequirePermission>} />
         <Route path="/contact-queries" element={<RequirePermission path="/contact-queries"><ContactQueriesPage /></RequirePermission>} />
         <Route path="/permissions" element={<RequirePermission path="/permissions"><PermissionsPage /></RequirePermission>} />
         <Route path="/my-account" element={<RequirePermission path="/my-account"><MyAccountPage /></RequirePermission>} />

@@ -27,7 +27,7 @@ const {
 	deleteEmployee,
 	reassignOrderToEmployee,
 } = require("../controllers/employee.controller");
-const { adminGetContactQueries, markContactQueryRead } = require("../controllers/contact.controller");
+const { adminGetContactQueries, getMyAssignedContactQueries, markContactQueryRead, updateContactAssignmentStatus, reassignContactToEmployee } = require("../controllers/contact.controller");
 const upload = require("../middleware/upload");
 
 // All admin routes require authentication
@@ -64,8 +64,15 @@ router.patch(
 router.patch("/orders/:id/reassign", checkPermission("edit_orders"), reassignOrderToEmployee);
 
 // ── Contact Queries ───────────────────────────────────────────────────────────
-router.get("/contact-queries", checkPermission("view_contact_queries"), adminGetContactQueries);
+router.get("/contact-queries/mine", checkPermission("view_assigned_contacts"), getMyAssignedContactQueries);
+router.get("/contact-queries", checkAnyPermission("view_contact_queries", "view_assigned_contacts"), adminGetContactQueries);
 router.patch("/contact-queries/:id/read", checkPermission("view_contact_queries"), markContactQueryRead);
+router.patch(
+	"/contact-queries/:id/assignment-status",
+	checkAnyPermission("edit_orders", "edit_assigned_contacts"),
+	updateContactAssignmentStatus
+);
+router.patch("/contact-queries/:id/reassign", checkPermission("edit_orders"), reassignContactToEmployee);
 
 // ── Uploads ───────────────────────────────────────────────────────────────────
 router.post("/uploads/image", upload.single("image"), uploadImage);

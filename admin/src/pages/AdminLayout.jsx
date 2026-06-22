@@ -14,6 +14,7 @@ const NAV_ITEMS = [
 	{ name: "Catalog Products", to: "/products", icon: BiPackage },
 	{ name: "Orders", to: "/orders", icon: BiListUl },
 	{ name: "My Orders", to: "/my-orders", icon: BiListUl },
+	{ name: "My Leads", to: "/my-leads", icon: BiEnvelope },
 	{ name: "Employees", to: "/employees", icon: BiBriefcase },
 	{ name: "Contact Queries", to: "/contact-queries", icon: BiEnvelope },
 	{ name: "Permissions", to: "/permissions", icon: BiLock },

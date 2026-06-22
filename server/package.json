@@ -10,6 +10,7 @@
 		"seed:super-admin": "node scripts/seedSuperAdmin.js",
 		"seed:employee-role": "node scripts/seedEmployeeRole.js",
 		"migrate:order-assignment": "node scripts/migrateOrderAssignment.js",
+		"migrate:contact-assignment": "node scripts/migrateContactAssignment.js",
 		"test:smtp": "node scripts/testSmtp.js"
 	},
 	"keywords": [],

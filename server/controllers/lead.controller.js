@@ -9,6 +9,8 @@ async function createIncomingLead(req, res, next) {
 			contactQueryId: query._id,
 			name: query.name,
 			subject: query.subject,
+			assignedTo: query.assignedTo || null,
+			assignmentStatus: query.assignmentStatus || null,
 		});
 	} catch (err) {
 		if (err.statusCode) {

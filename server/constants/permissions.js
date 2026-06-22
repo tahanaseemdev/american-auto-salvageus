@@ -19,9 +19,16 @@ const ALL_PERMISSIONS = [
 	"manage_employees",
 	"view_assigned_orders",
 	"edit_assigned_orders",
+	"view_assigned_contacts",
+	"edit_assigned_contacts",
 ];
 
-const EMPLOYEE_PERMISSIONS = ["view_assigned_orders", "edit_assigned_orders"];
+const EMPLOYEE_PERMISSIONS = [
+	"view_assigned_orders",
+	"edit_assigned_orders",
+	"view_assigned_contacts",
+	"edit_assigned_contacts",
+];
 
 const ASSIGNMENT_STATUSES = ["Assigned", "InProgress", "Completed", "Rejected", "Cancelled"];
 

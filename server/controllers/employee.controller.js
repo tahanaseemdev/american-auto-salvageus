@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Role = require("../models/Role");
 const Order = require("../models/Order");
+const ContactQuery = require("../models/ContactQuery");
 const { sendJsonResponse } = require("../utils/helpers");
 const { sendEmployeeWelcomeEmail } = require("../utils/mailer");
 const { reassignOrder } = require("../services/orderAssignment.service");
@@ -228,6 +229,11 @@ async function deleteEmployee(req, res, next) {
 			assignmentStatus: { $in: ["Assigned", "InProgress"] },
 		}).select("_id orderNumber");
 
+		const openContacts = await ContactQuery.find({
+			assignedTo: employee._id,
+			assignmentStatus: { $in: ["Assigned", "InProgress"] },
+		}).select("_id subject");
+
 		if (openOrders.length > 0) {
 			const now = new Date();
 			await Promise.all(
@@ -251,16 +257,42 @@ async function deleteEmployee(req, res, next) {
 			);
 		}
 
+		if (openContacts.length > 0) {
+			const now = new Date();
+			await Promise.all(
+				openContacts.map((contact) =>
+					ContactQuery.findByIdAndUpdate(contact._id, {
+						assignedTo: null,
+						assignedAt: null,
+						assignmentStatus: null,
+						$push: {
+							assignmentHistory: {
+								from: employee._id,
+								to: null,
+								by: req.user._id,
+								action: "unassigned_on_employee_delete",
+								note: `Employee ${employee.name} was deleted; lead unassigned`,
+								at: now,
+							},
+						},
+					})
+				)
+			);
+		}
+
 		await User.findByIdAndDelete(employee._id);
 
-		const message =
-			openOrders.length > 0
-				? `Employee deleted. ${openOrders.length} open order(s) were unassigned.`
-				: "Employee deleted.";
+		const parts = [];
+		if (openOrders.length > 0) parts.push(`${openOrders.length} open order(s) unassigned`);
+		if (openContacts.length > 0) parts.push(`${openContacts.length} open lead(s) unassigned`);
+		const message = parts.length
+			? `Employee deleted. ${parts.join("; ")}.`
+			: "Employee deleted.";
 
 		return sendJsonResponse(res, HTTP_STATUS_CODES.OK, true, message, {
 			_id: employee._id,
 			unassignedOrders: openOrders.length,
+			unassignedContacts: openContacts.length,
 		});
 	} catch (err) {
 		next(err);

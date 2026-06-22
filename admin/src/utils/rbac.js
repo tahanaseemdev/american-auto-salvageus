@@ -10,6 +10,7 @@ export const PAGE_RULES = [
 	{ path: '/products', requiredPermission: 'view_products' },
 	{ path: '/orders', requiredPermission: 'view_orders' },
 	{ path: '/my-orders', requiredPermission: 'view_assigned_orders' },
+	{ path: '/my-leads', requiredPermission: 'view_assigned_contacts' },
 	{ path: '/contact-queries', requiredPermission: 'view_contact_queries' },
 	{ path: '/permissions', requiredAnyPermissions: ['manage_roles', 'manage_users'] },
 	{ path: '/my-account', requiredPermission: null, superOnly: true },
@@ -53,6 +54,8 @@ export function getFirstAccessiblePath(admin) {
 	if (isEmployee(admin)) {
 		const myOrders = paths.find((p) => p === '/my-orders');
 		if (myOrders) return myOrders;
+		const myLeads = paths.find((p) => p === '/my-leads');
+		if (myLeads) return myLeads;
 	}
 	return paths[0] || '/login';
 }

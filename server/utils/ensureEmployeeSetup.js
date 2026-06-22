@@ -3,6 +3,7 @@ const AppSettings = require("../models/AppSettings");
 const { EMPLOYEE_PERMISSIONS } = require("../constants/permissions");
 
 const SETTINGS_KEY = "order_assignment";
+const CONTACT_SETTINGS_KEY = "contact_assignment";
 
 async function ensureEmployeeRole() {
 	let role = await Role.findOne({ title: "Employee" });
@@ -16,8 +17,13 @@ async function ensureEmployeeRole() {
 }
 
 async function ensureAssignmentSettings() {
-	return AppSettings.findOneAndUpdate(
+	await AppSettings.findOneAndUpdate(
 		{ key: SETTINGS_KEY },
+		{ $setOnInsert: { lastAssignedEmployeeId: null, assignmentCounter: 0 } },
+		{ upsert: true, new: true }
+	);
+	await AppSettings.findOneAndUpdate(
+		{ key: CONTACT_SETTINGS_KEY },
 		{ $setOnInsert: { lastAssignedEmployeeId: null, assignmentCounter: 0 } },
 		{ upsert: true, new: true }
 	);
