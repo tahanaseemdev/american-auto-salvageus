@@ -240,7 +240,7 @@ export default function OrderTracking() {
                 <div className="text-neutral-400 text-xs">Our team is available Mon–Sat, 8 AM – 6 PM EST.</div>
               </div>
               <div className="flex gap-3 flex-wrap">
-                <a href="tel:+18008055708"
+                <a href="tel:+18667009187"
                   className="flex items-center gap-2 border border-neutral-700 hover:border-amber-400/50 text-neutral-300 hover:text-amber-400 text-xs font-bold tracking-widest uppercase px-4 py-2.5 rounded-xl transition-all">
                   <BiPhone size={13} /> Call Us
                 </a>

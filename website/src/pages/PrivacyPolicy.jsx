@@ -132,7 +132,7 @@ export default function PrivacyPolicy() {
             <BulletList items={[
               'We do not sell or rent your mobile number to third parties for their marketing campaigns',
               'Message and data rates may apply depending on your wireless carrier',
-              'You can opt out at any time by replying STOP to any message we send, or by contacting us at 1-(800) 805-5708 or info@americanautosalvageus.com',
+              'You can opt out at any time by replying STOP to any message we send, or by contacting us at 1-(866) 700-9187 or info@americanautosalvageus.com',
             ]} />
           </Section>
 
@@ -173,7 +173,7 @@ export default function PrivacyPolicy() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   { icon: <BiMap size={15} className="text-amber-400" />, label: 'Address', value: '30 N Gould St Ste R\nSheridan, WY 82801' },
-                  { icon: <BiPhone size={15} className="text-amber-400" />, label: 'Phone', value: '1-(800) 805-5708', href: 'tel:+18008055708' },
+                  { icon: <BiPhone size={15} className="text-amber-400" />, label: 'Phone', value: '1-(866) 700-9187', href: 'tel:+18667009187' },
                   { icon: <BiEnvelope size={15} className="text-amber-400" />, label: 'Email', value: 'info@americanautosalvageus.com', href: 'mailto:info@americanautosalvageus.com' },
                 ].map(item => (
                   <div key={item.label} className="bg-neutral-800/60 border border-white/5 rounded-xl px-4 py-3">

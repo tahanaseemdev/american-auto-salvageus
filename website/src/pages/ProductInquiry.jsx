@@ -185,8 +185,8 @@ export default function ProductInquiry() {
 									: 'Share your details and our team will follow up with your product request.'}
 							</p>
 							{!isQuoteMode ? (
-								<a href="tel:+18008055708" className="inline-flex items-center gap-2 mt-2 text-[11px] font-black tracking-widest uppercase text-amber-700 hover:text-amber-800">
-									<BiPhoneCall size={14} /> Call 1-(800) 805-5708
+								<a href="tel:+18667009187" className="inline-flex items-center gap-2 mt-2 text-[11px] font-black tracking-widest uppercase text-amber-700 hover:text-amber-800">
+									<BiPhoneCall size={14} /> Call 1-(866) 700-9187
 								</a>
 							) : null}
 						</div>

@@ -71,7 +71,7 @@ function BulletList({ items }) {
 }
 
 const HOW_TO_STEPS = [
-  <>Contact us on our dedicated support toll-free number <a href="tel:+18008055708" className="text-amber-500 font-semibold hover:underline">1-(800) 805-5708</a> or email us at <a href="mailto:info@americanautosalvageus.com" className="text-amber-500 font-semibold hover:underline">info@americanautosalvageus.com</a> Mon–Fri, 9:00 AM – 6:00 PM CST.</>,
+  <>Contact us on our dedicated support toll-free number <a href="tel:+18667009187" className="text-amber-500 font-semibold hover:underline">1-(866) 700-9187</a> or email us at <a href="mailto:info@americanautosalvageus.com" className="text-amber-500 font-semibold hover:underline">info@americanautosalvageus.com</a> Mon–Fri, 9:00 AM – 6:00 PM CST.</>,
   'You have a 6-month return and replacement warranty from the date of delivery to return the merchandise.',
   'Our support team will initiate the pick-up procedure upon approval from the warranty team. We will provide a BOL (Bill of Lading) that needs to be printed and shown to the driver at the time of pick-up.',
   'Returned merchandise must be in the same condition or with the same packaging as originally shipped. The ability to process returns is limited if the merchandise received is modified, damaged, or partially/fully installed.',
@@ -210,7 +210,7 @@ export default function Returns() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-3 flex-shrink-0">
-                <a href="tel:+18008055708"
+                <a href="tel:+18667009187"
                   className="flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white font-black text-[12px] tracking-widest uppercase px-5 py-3 rounded-xl transition-colors">
                   <BiPhone size={14} /> Call Us
                 </a>

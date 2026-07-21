@@ -170,7 +170,7 @@ export default function TermsOfUse() {
 					<Section icon={<BiMessageDetail size={16} className="text-amber-500" />} title="6. Opt-Out Method">
 						<p>
 							You can opt out of receiving SMS messages at any time. To do so, simply reply &quot;STOP&quot; to any SMS message you receive. Alternatively, you can contact us at{' '}
-							<a href="tel:+18008055708" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">1-(800) 805-5708</a>
+							<a href="tel:+18667009187" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">1-(866) 700-9187</a>
 							{' '}or{' '}
 							<a href="mailto:info@americanautosalvageus.com" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">info@americanautosalvageus.com</a>
 							{' '}to request removal from our messaging list.
@@ -182,7 +182,7 @@ export default function TermsOfUse() {
 							If you are experiencing any issues, you can reply with the keyword &quot;HELP&quot;. Or, you can get help directly from us on our{' '}
 							<Link to="/contact" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">Contact Us</Link>
 							{' '}page, by calling{' '}
-							<a href="tel:+18008055708" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">1-(800) 805-5708</a>
+							<a href="tel:+18667009187" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">1-(866) 700-9187</a>
 							, or by emailing{' '}
 							<a href="mailto:info@americanautosalvageus.com" className="text-amber-600 font-semibold hover:text-amber-700 underline underline-offset-2">info@americanautosalvageus.com</a>.
 						</p>
@@ -215,7 +215,7 @@ export default function TermsOfUse() {
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 								{[
 									{ icon: <BiMap size={15} className="text-amber-400" />, label: 'Address', value: '30 N Gould St Ste R\nSheridan, WY 82801' },
-									{ icon: <BiPhone size={15} className="text-amber-400" />, label: 'Phone', value: '1-(800) 805-5708', href: 'tel:+18008055708' },
+									{ icon: <BiPhone size={15} className="text-amber-400" />, label: 'Phone', value: '1-(866) 700-9187', href: 'tel:+18667009187' },
 									{ icon: <BiEnvelope size={15} className="text-amber-400" />, label: 'Email', value: 'info@americanautosalvageus.com', href: 'mailto:info@americanautosalvageus.com' },
 								].map(item => (
 									<div key={item.label} className="bg-neutral-800/60 border border-white/5 rounded-xl px-4 py-3">
