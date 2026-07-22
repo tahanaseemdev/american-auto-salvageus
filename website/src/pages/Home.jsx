@@ -113,20 +113,20 @@ const partsGrid = [
 	{ title: "Door Panel", img: "/door-assembly-front.jpg" },
 ];
 const brands = [
-	{ name: "Acura" },
-	{ name: "Alfa Romeo" },
-	{ name: "AMC" },
-	{ name: "Audi" },
-	{ name: "BMW" },
-	{ name: "Buick" },
-	{ name: "Cadillac" },
-	{ name: "Chevrolet" },
-	{ name: "Chrysler" },
-	{ name: "Daewoo" },
-	{ name: "Dodge" },
-	{ name: "Ford" },
-	{ name: "Fiat" },
-	{ name: "Eagle" },
+	{ name: "Acura", img: "/logos/acura.png" },
+	{ name: "Alfa Romeo", img: "/logos/alfa-romeo.png" },
+	{ name: "AMC", img: "/logos/amc.png" },
+	{ name: "Audi", img: "/logos/audi.png" },
+	{ name: "BMW", img: "/logos/bmw.png" },
+	{ name: "Buick", img: "/logos/buick.png" },
+	{ name: "Cadillac", img: "/logos/cadillac.png" },
+	{ name: "Chevrolet", img: "/logos/chevrolet.png" },
+	{ name: "Chrysler", img: "/logos/chrysler.png" },
+	{ name: "Daewoo", img: "/logos/daewoo.png" },
+	{ name: "Dodge", img: "/logos/dodge.png" },
+	{ name: "Ford", img: "/logos/ford.png" },
+	{ name: "Fiat", img: "/logos/fiat.png" },
+	{ name: "Eagle", img: "/logos/eagle.png" },
 ];
 const testimonials = [
 	{ id: 1, quote: "Found a low-miles Tucson transmission in minutes. Shipping was quick and the unit was clean and tested.", author: "Casey Rossi", detail: "4.9 / 5 rating" },
@@ -700,12 +700,11 @@ export default function Home() {
 							{[...Array(2)].map((_, gi) =>
 								brands.map(brand => (
 									<motion.div key={`${gi}-${brand.name}`}
-										className="inline-flex items-center gap-3 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 mx-2 cursor-pointer shrink-0"
+										className="inline-flex items-center justify-center bg-neutral-50 border border-neutral-200 rounded-xl px-7 py-4 mx-2 cursor-pointer shrink-0"
 										whileHover={{ scale: 1.05, borderColor: '#FCD34D', backgroundColor: '#FFFBEB' }}>
-										<div className="w-8 h-8 flex items-center justify-center rounded-lg bg-neutral-900 text-amber-400 font-['Barlow_Condensed',sans-serif] font-black text-base leading-none">
-											{brand.name.charAt(0)}
+										<div className="w-28 h-12 flex items-center justify-center">
+											<img src={brand.img} alt={`${brand.name} logo`} title={brand.name} className="max-w-full max-h-full object-contain" />
 										</div>
-										<span className="font-bold text-sm text-neutral-700 whitespace-nowrap">{brand.name}</span>
 									</motion.div>
 								))
 							)}
