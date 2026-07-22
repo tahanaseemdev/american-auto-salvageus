@@ -72,14 +72,14 @@ const FEATURED_STATIC_PRODUCTS = [
 		id: '69cfbed17b92a7441ac50ba3-69cfbed27b92a7441ac50bbe-69cfc0ea7b92a7441ac52d10-69cfc0ff7b92a7441ac52dcf-74aa49358bbb16ec24043c1b',
 		title: '1988 Mazda MX6 Transmission AT, w/o Turbo',
 		price: 9140,
-		img: '/flywheel.jpg',
+		img: '/transmission.jpg',
 		tag: 'Transmission',
 	},
 	{
 		id: '69cfbed17b92a7441ac50ba3-69cfbed27b92a7441ac50bab-69cfbf837b92a7441ac514fb-69cfbfa57b92a7441ac517ab-9657809acf4becee3152bcee',
 		title: '1967 Chevrolet Suburban-10 (1988 Down) Transmission MT, 4 speed, Muncie manufactured',
 		price: 949,
-		img: '/flywheel.jpg',
+		img: '/transmission.jpg',
 		tag: 'Transmission',
 	},
 	{
@@ -94,8 +94,8 @@ const FEATURED_STATIC_PRODUCTS = [
 const formatMoney = (value) =>
 	Number(value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 const promos = [
-	{ id: 1, eyebrow: "Big Sale", title: "Used Engines", badge: "Save 25%", img: "/engine.jpg" },
-	{ id: 2, eyebrow: "Ready for", title: "Used Transmissions", badge: "New Arrivals", img: "/flywheel.jpg" },
+	{ id: 1, eyebrow: "Big Sale", title: "Used Engines", badge: "Save 25%", img: "/promo-engines.jpg" },
+	{ id: 2, eyebrow: "Ready for", title: "Used Transmissions", badge: "New Arrivals", img: "/promo-transmissions.jpg" },
 	{ id: 3, eyebrow: "Engine", title: "Truck Parts", badge: "Top Rated", img: "/drive-shaft-rear.jpg" },
 ];
 const partsGrid = [
