@@ -1,47 +1,12 @@
 const ContactQuery = require("../models/ContactQuery");
 const User = require("../models/User");
-const AppSettings = require("../models/AppSettings");
 const {
 	sendContactAssignedEmployeeEmail,
 	sendContactAssignedAdminEmail,
 } = require("../utils/mailer");
-const { ensureEmployeeSetup } = require("../utils/ensureEmployeeSetup");
-
-const SETTINGS_KEY = "contact_assignment";
-
-async function getActiveEmployees() {
-	const employeeRole = await ensureEmployeeSetup();
-	if (!employeeRole) return [];
-
-	return User.find({
-		role: employeeRole._id,
-		isRevoked: false,
-		isActiveForAssignment: true,
-	})
-		.sort({ employeeQueueOrder: 1, createdAt: 1 })
-		.select("name email")
-		.lean();
-}
-
-async function pickNextEmployee(employees) {
-	if (!employees.length) return null;
-
-	const settings = await AppSettings.findOneAndUpdate(
-		{ key: SETTINGS_KEY },
-		{ $inc: { assignmentCounter: 1 }, $setOnInsert: { lastAssignedEmployeeId: null } },
-		{ upsert: true, new: true }
-	);
-
-	const idx = (Math.max(settings.assignmentCounter, 1) - 1) % employees.length;
-	const nextEmployee = employees[idx];
-
-	await AppSettings.updateOne(
-		{ key: SETTINGS_KEY },
-		{ lastAssignedEmployeeId: nextEmployee._id }
-	);
-
-	return nextEmployee;
-}
+// Shared with orderAssignment.service so orders and contact queries advance the
+// same round-robin counter rather than each rotating on its own.
+const { getActiveEmployees, pickNextEmployee } = require("./assignmentQueue.service");
 
 async function assignContactToEmployee(contactId, employee, { action = "round_robin", by = null, note = "", employeeNotes = null } = {}) {
 	const now = new Date();
