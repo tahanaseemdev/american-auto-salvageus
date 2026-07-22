@@ -65,28 +65,28 @@ const FEATURED_STATIC_PRODUCTS = [
 		id: '65f1a001c12d4a001a000016-69cfbed27b92a7441ac50bd3-69cfc2df7b92a7441ac54130-69cfc2fc7b92a7441ac541c6-911800663e091e76169d5282',
 		title: '1995 Volvo 960 Engine (2.9L, VIN 96, 6th and 7th digit), B6304F engine',
 		price: 1165,
-		img: 'https://allusedautoparts.world/aaps-img/engine.jpg',
+		img: '/engine.jpg',
 		tag: 'Engine',
 	},
 	{
 		id: '69cfbed17b92a7441ac50ba3-69cfbed27b92a7441ac50bbe-69cfc0ea7b92a7441ac52d10-69cfc0ff7b92a7441ac52dcf-74aa49358bbb16ec24043c1b',
 		title: '1988 Mazda MX6 Transmission AT, w/o Turbo',
 		price: 9140,
-		img: 'https://allusedautoparts.world/aaps-img/transmission.jpg',
+		img: '/flywheel.jpg',
 		tag: 'Transmission',
 	},
 	{
 		id: '69cfbed17b92a7441ac50ba3-69cfbed27b92a7441ac50bab-69cfbf837b92a7441ac514fb-69cfbfa57b92a7441ac517ab-9657809acf4becee3152bcee',
 		title: '1967 Chevrolet Suburban-10 (1988 Down) Transmission MT, 4 speed, Muncie manufactured',
 		price: 949,
-		img: 'https://allusedautoparts.world/aaps-img/transmission.jpg',
+		img: '/flywheel.jpg',
 		tag: 'Transmission',
 	},
 	{
 		id: '65f1a001c12d4a001a000016-69cfbed27b92a7441ac50baf-69cfbfd77b92a7441ac51b91-69cfbfea7b92a7441ac51cfa-927cea07235dc2ad97060ee2',
 		title: '1977 Dodge Monaco (1978 Down) Engine 8-400, 4BC VIN N (5th digit)',
 		price: 3536,
-		img: 'https://allusedautoparts.world/aaps-img/engine.jpg',
+		img: '/engine.jpg',
 		tag: 'Engine',
 	},
 ];
@@ -94,39 +94,39 @@ const FEATURED_STATIC_PRODUCTS = [
 const formatMoney = (value) =>
 	Number(value || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 const promos = [
-	{ id: 1, eyebrow: "Big Sale", title: "Used Engines", badge: "Save 25%", img: "https://allusedautoparts.world/images/promo/promo1.jpg" },
-	{ id: 2, eyebrow: "Ready for", title: "Used Transmissions", badge: "New Arrivals", img: "https://allusedautoparts.world/images/promo/promo2.jpg" },
-	{ id: 3, eyebrow: "Engine", title: "Truck Parts", badge: "Top Rated", img: "https://allusedautoparts.world/images/promo/promo3.jpg" },
+	{ id: 1, eyebrow: "Big Sale", title: "Used Engines", badge: "Save 25%", img: "/engine.jpg" },
+	{ id: 2, eyebrow: "Ready for", title: "Used Transmissions", badge: "New Arrivals", img: "/flywheel.jpg" },
+	{ id: 3, eyebrow: "Engine", title: "Truck Parts", badge: "Top Rated", img: "/drive-shaft-rear.jpg" },
 ];
 const partsGrid = [
-	{ title: "A/C Control", img: "https://allusedautoparts.world/aaps-img/a-c-control.jpg" },
-	{ title: "ABS Control Module", img: "https://allusedautoparts.world/aaps-img/abs-control-module-pump.jpg" },
-	{ title: "AC Control", img: "https://allusedautoparts.world/aaps-img/ac-control.jpg" },
-	{ title: "Air Bag", img: "https://allusedautoparts.world/aaps-img/air-bag.jpg" },
-	{ title: "AC Compressor", img: "https://allusedautoparts.world/aaps-img/air-conditioner-compressor.jpg" },
-	{ title: "Alternator", img: "https://allusedautoparts.world/aaps-img/alternator.jpg" },
-	{ title: "Axle Front", img: "https://allusedautoparts.world/aaps-img/axle-front.jpg" },
-	{ title: "Axle Rear", img: "https://allusedautoparts.world/aaps-img/axle-rear.jpg" },
-	{ title: "Axle Shaft", img: "https://allusedautoparts.world/aaps-img/axle-shaft.jpg" },
-	{ title: "Chassis Computer", img: "https://allusedautoparts.world/aaps-img/chassis-computer.jpg" },
-	{ title: "Convertible Top Motor", img: "https://allusedautoparts.world/aaps-img/convertible-top-motor.jpg" },
-	{ title: "Door Panel", img: "https://allusedautoparts.world/aaps-img/abs-control-module-pump.jpg" },
+	{ title: "A/C Control", img: "/a-c-control.jpg" },
+	{ title: "ABS Control Module", img: "/abs-control-module-pump.jpg" },
+	{ title: "AC Control", img: "/a-c-control.jpg" },
+	{ title: "Air Bag", img: "/air-bag.jpg" },
+	{ title: "AC Compressor", img: "/air-conditioner-compressor.jpg" },
+	{ title: "Alternator", img: "/alternator.jpg" },
+	{ title: "Axle Front", img: "/axle-front.jpg" },
+	{ title: "Axle Rear", img: "/axle-rear.jpg" },
+	{ title: "Axle Shaft", img: "/axle-shaft.jpg" },
+	{ title: "Chassis Computer", img: "/chassis-computer.jpg" },
+	{ title: "Convertible Top Motor", img: "/convertible-top-motor.jpg" },
+	{ title: "Door Panel", img: "/door-assembly-front.jpg" },
 ];
 const brands = [
-	{ name: "Acura", img: "https://allusedautoparts.world/aaps-img/acura.jpg" },
-	{ name: "Alfa Romeo", img: "https://allusedautoparts.world/aaps-img/alfa.jpg" },
-	{ name: "AMC", img: "https://allusedautoparts.world/aaps-img/amc.jpg" },
-	{ name: "Audi", img: "https://allusedautoparts.world/aaps-img/audi.jpg" },
-	{ name: "BMW", img: "https://allusedautoparts.world/aaps-img/bmw.jpg" },
-	{ name: "Buick", img: "https://allusedautoparts.world/aaps-img/buick.jpg" },
-	{ name: "Cadillac", img: "https://allusedautoparts.world/aaps-img/cadillac.jpg" },
-	{ name: "Chevrolet", img: "https://allusedautoparts.world/aaps-img/chevrolet.jpg" },
-	{ name: "Chrysler", img: "https://allusedautoparts.world/aaps-img/chrysler.jpg" },
-	{ name: "Daewoo", img: "https://allusedautoparts.world/aaps-img/daewoo.jpg" },
-	{ name: "Dodge", img: "https://allusedautoparts.world/aaps-img/dodge.jpg" },
-	{ name: "Ford", img: "https://allusedautoparts.world/aaps-img/ford.jpg" },
-	{ name: "Fiat", img: "https://allusedautoparts.world/aaps-img/fiat.jpg" },
-	{ name: "Eagle", img: "https://allusedautoparts.world/aaps-img/eagle.jpg" },
+	{ name: "Acura" },
+	{ name: "Alfa Romeo" },
+	{ name: "AMC" },
+	{ name: "Audi" },
+	{ name: "BMW" },
+	{ name: "Buick" },
+	{ name: "Cadillac" },
+	{ name: "Chevrolet" },
+	{ name: "Chrysler" },
+	{ name: "Daewoo" },
+	{ name: "Dodge" },
+	{ name: "Ford" },
+	{ name: "Fiat" },
+	{ name: "Eagle" },
 ];
 const testimonials = [
 	{ id: 1, quote: "Found a low-miles Tucson transmission in minutes. Shipping was quick and the unit was clean and tested.", author: "Casey Rossi", detail: "4.9 / 5 rating" },
@@ -433,7 +433,7 @@ export default function Home() {
 	const displayedPartsGrid = featuredCategories.length
 		? featuredCategories.map((category) => ({
 			title: category.title,
-			img: category.image ? resolveImageUrl(category.image) : 'https://allusedautoparts.world/aaps-img/alternator.jpg',
+			img: category.image ? resolveImageUrl(category.image) : '/alternator.jpg',
 			href: `/shop/part/${category._id}`,
 		}))
 		: partsGrid;
@@ -702,8 +702,8 @@ export default function Home() {
 									<motion.div key={`${gi}-${brand.name}`}
 										className="inline-flex items-center gap-3 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 mx-2 cursor-pointer shrink-0"
 										whileHover={{ scale: 1.05, borderColor: '#FCD34D', backgroundColor: '#FFFBEB' }}>
-										<div className="w-14 h-8 flex items-center justify-center">
-											<img src={brand.img} alt={brand.name} className="max-w-full max-h-full object-contain mix-blend-multiply" />
+										<div className="w-8 h-8 flex items-center justify-center rounded-lg bg-neutral-900 text-amber-400 font-['Barlow_Condensed',sans-serif] font-black text-base leading-none">
+											{brand.name.charAt(0)}
 										</div>
 										<span className="font-bold text-sm text-neutral-700 whitespace-nowrap">{brand.name}</span>
 									</motion.div>
